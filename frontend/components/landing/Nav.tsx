@@ -1,11 +1,11 @@
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
+import { TraceLogo } from "@/components/brand/TraceLogo";
 
 export function Nav() {
   return (
     <nav className="nav">
-      <a className="logo" href="#top">
-        <span className="logo-mark" />
-        TRACE
+      <a className="logo flex items-center gap-2.5 group" href="#top" title="TRACE — Home">
+        <TraceLogo size="sm" />
       </a>
       <div className="links">
         <a href="#score">Score vs evidence</a>

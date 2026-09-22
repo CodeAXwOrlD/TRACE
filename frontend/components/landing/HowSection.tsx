@@ -18,7 +18,7 @@ const STEPS: StepData[] = [
     desc: "A $128.33 card-not-present purchase on card ····4417 scores 0.87. That score alone decides nothing.",
     p: 0.55,
     u: "High",
-    ev: ["Risk score 0.87 (input only)", "var(--muted)"],
+    ev: ["Risk score 0.87 (input only)", "#38bdf8"],
   },
   {
     title: "Looking back on the card",
@@ -168,7 +168,10 @@ export function HowSection() {
           </div>
 
           <aside className="live">
-            <div className="lhead">{active >= 0 ? STEPS[active]?.title : "Waiting for a flagged transaction"}</div>
+            <div className="lhead">
+              <span className="lhead-pulse" />
+              <span className="lhead-title">{active >= 0 ? STEPS[active]?.title : "Waiting for a flagged transaction"}</span>
+            </div>
             <div className="est">
               <span>{displayed.toFixed(2)}</span>
               <small>FRAUD PROBABILITY</small>
@@ -177,13 +180,14 @@ export function HowSection() {
               <i style={{ width: `${displayed * 100}%` }} />
             </div>
             <div className="urow">
-              Uncertainty <b>{uncertainty}</b>
+              <span className="urow-label">Uncertainty</span>
+              <b className={`ubadge ubadge-${uncertainty.toLowerCase()}`}>{uncertainty}</b>
             </div>
             <ul className="evl">
               {shownSteps.map((s) => (
                 <li key={s.title} style={{ ["--c" as any]: s.ev[1] }}>
                   <i />
-                  {s.ev[0]}
+                  <span>{s.ev[0]}</span>
                 </li>
               ))}
             </ul>

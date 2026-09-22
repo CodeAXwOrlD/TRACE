@@ -15,17 +15,19 @@ import { ScrollReveal } from "@/components/landing/ScrollReveal";
 export default function LandingPage() {
   const [introDone, setIntroDone] = useState(false);
 
+  const handleDone = () => {
+    setIntroDone(true);
+  };
+
   useEffect(() => {
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    document.body.classList.toggle("introing", !introDone && !reduced);
-    document.body.classList.toggle("go", introDone || reduced);
-    if (reduced) setIntroDone(true);
+    document.body.classList.toggle("introing", !introDone);
+    document.body.classList.toggle("go", introDone);
   }, [introDone]);
 
   return (
     <>
       <StarDefs />
-      {!introDone && <IntroSequence onDone={() => setIntroDone(true)} />}
+      {!introDone && <IntroSequence onDone={handleDone} />}
       <Nav />
       <Hero active={introDone} />
       <ScoreSection />

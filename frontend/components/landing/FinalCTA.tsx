@@ -16,7 +16,19 @@ export function FinalCTA() {
         </div>
       </section>
       <footer className="site-footer">
-        Design preview with sample data. Case IDs, card numbers and policy names are placeholders.
+        <div className="footer-content">
+          <span className="footer-badge">CONFIDENTIAL / DEMO ENVIRONMENT</span>
+          <p className="footer-text">
+            Design preview with sample data. Case IDs, card numbers and policy names are simulated placeholders.
+          </p>
+          <div className="footer-meta">
+            <span>TRACE v1.0.4</span>
+            <span className="footer-dot">•</span>
+            <span>Agentic Investigation Workbench</span>
+            <span className="footer-dot">•</span>
+            <span>Security Encrypted</span>
+          </div>
+        </div>
       </footer>
     </>
   );

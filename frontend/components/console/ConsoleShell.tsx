@@ -6,6 +6,7 @@ import { StatusIndicator } from "@/components/ui/StatusIndicator";
 import { CommandPalette } from "@/components/workbench/CommandPalette";
 import { useCommandPalette } from "@/hooks/useCommandPalette";
 import { getHealth } from "@/lib/api";
+import { TraceLogo } from "@/components/brand/TraceLogo";
 
 const links = [
   { href: "/investigations", label: "Investigations" },
@@ -33,9 +34,8 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen">
       <header className="sticky top-0 z-40 h-16 px-6 flex items-center justify-between border-b border-white/[.06] bg-[rgba(5,6,8,.75)] backdrop-blur-xl">
         <div className="flex items-center gap-8">
-          <Link href="/dashboard" className="font-bold tracking-[0.18em] text-sm flex items-center gap-2.5">
-            <span className="w-[18px] h-[18px] border-[1.5px] border-orange rotate-45 relative" />
-            TRACE
+          <Link href="/dashboard" className="flex items-center gap-2.5">
+            <TraceLogo size="sm" />
           </Link>
           <nav className="hidden md:flex gap-6 text-sm text-muted">
             {links.map((l) => (
