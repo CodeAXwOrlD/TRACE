@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { NeonText } from "@/components/neon/NeonText";
 
 interface StepData {
   title: string;
@@ -145,16 +144,10 @@ export function HowSection() {
     <section className="sec" id="how">
       <div className="wrap">
         <p className="label rv">HOW A CASE RUNS</p>
-        <NeonText
-          as="h2"
-          className="title neon-title"
-          fontSize={64}
-          ariaLabel="The evidence builds the decision."
-          lines={[
-            { text: "The evidence", tone: "ice" },
-            { text: "builds the decision.", tone: "fire" },
-          ]}
-        />
+        <h2 className="sec-title rv">
+          <span>The evidence </span>
+          <span className="highlight">builds the decision.</span>
+        </h2>
         <p className="lead rv">
           Scroll through one investigation. Each step adds evidence, and the estimate on the right moves with it. The
           flagged transaction is only where the agent starts looking.

@@ -47,25 +47,37 @@ export function IntroSequence({ onDone }: IntroSequenceProps) {
       });
 
     async function run() {
+      // Ensure web fonts are ready before starting the cinematic sequence
+      if (typeof document !== "undefined" && document.fonts && document.fonts.ready) {
+        await Promise.race([
+          document.fonts.ready,
+          new Promise((r) => setTimeout(r, 1200))
+        ]);
+      }
+      neonRef.current?.layout();
+
       await sleep(250);
       if (cancelled) return;
-      // .i-mark fade handled by the "in" class already applied on mount
-      await sleep(1000);
-      if (!skippedRef.current) {
-        await neonRef.current?.play({ reveal: true, speedMul: 0.55 }); // cool hop, T R A C E
+      // Phase 1: Titanium wordmark outline and deep carbon body fade in unlit
+      await sleep(800);
+      if (!skippedRef.current && neonRef.current) {
+        // Phase 2: Electric light beam hops letter by letter: T - R - A - C - E
+        await neonRef.current.play({ reveal: true, speedMul: 0.55 });
       }
       if (cancelled) return;
-      if (!skippedRef.current) {
+      if (!skippedRef.current && neonRef.current) {
+        // Phase 3: Ignite: border turns warm amber/gold neon, horizontal lens flares sweep
         setPhase("lit");
-        neonRef.current?.lit();
-        await neonRef.current?.play({ reveal: false, speedMul: 1.5 }); // fast ignite pass
+        neonRef.current.lit();
+        await neonRef.current.play({ reveal: false, speedMul: 1.5 });
       }
       if (cancelled) return;
       if (!skippedRef.current) {
-        await sleep(1500); // tagline hold
+        await sleep(1400); // Tagline reveal hold
       }
+      // Phase 4: Camera pushes into the wordmark into the live intelligence console
       setPhase("out");
-      await sleep(skippedRef.current ? 250 : 900);
+      await sleep(skippedRef.current ? 250 : 850);
       finish();
     }
 
@@ -112,10 +124,13 @@ export function IntroSequence({ onDone }: IntroSequenceProps) {
         <NeonText
           as="div"
           lines={[{ text: "TRACE", tone: "ice" }]}
-          fontSize={190}
-          letterSpacing={0.08}
+          fontSize={196}
+          letterSpacing={0.14}
           lineHeight={1.05}
           fluid
+          fillRest={[16, 23, 34]}
+          fillHi={[150, 205, 245]}
+          fillGlow={0.7}
           playOnView={false}
           ariaLabel="TRACE"
           instanceRef={neonRef}

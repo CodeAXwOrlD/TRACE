@@ -1,20 +1,12 @@
-import { NeonText } from "@/components/neon/NeonText";
-
 export function OutcomesSection() {
   return (
     <section className="sec" id="outcomes">
       <div className="wrap">
         <p className="label rv">THREE OUTCOMES</p>
-        <NeonText
-          as="h2"
-          className="title neon-title"
-          fontSize={64}
-          ariaLabel="Block it, clear it, or ask a person."
-          lines={[
-            { text: "Block it, clear it,", tone: "ice" },
-            { text: "or ask a person.", tone: "fire" },
-          ]}
-        />
+        <h2 className="sec-title rv">
+          <span>Block it, clear it, </span>
+          <span className="highlight">or ask a person.</span>
+        </h2>
         <p className="lead rv">
           Blocking everything scores badly, because half of flagged cases are legitimate. TRACE is as confident
           closing a case as it is blocking one.

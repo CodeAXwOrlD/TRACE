@@ -1,5 +1,3 @@
-import { NeonText } from "@/components/neon/NeonText";
-
 const patterns = [
   { title: "Card testing", desc: "Three or more tiny online authorizations within about an hour, then a larger purchase." },
   { title: "Card-not-present fraud", desc: "A burst of online purchases that does not fit what this card normally does." },
@@ -14,16 +12,10 @@ export function PatternsSection() {
     <section className="sec" id="patterns">
       <div className="wrap">
         <p className="label rv">WHAT TRACE LOOKS FOR</p>
-        <NeonText
-          as="h2"
-          className="title neon-title"
-          fontSize={64}
-          ariaLabel="Five known patterns, and one for the rest."
-          lines={[
-            { text: "Five known patterns,", tone: "ice" },
-            { text: "and one for the rest.", tone: "fire" },
-          ]}
-        />
+        <h2 className="sec-title rv">
+          <span>Five known patterns, </span>
+          <span className="highlight">and one for the rest.</span>
+        </h2>
         <div className="plist">
           {patterns.map((p) => (
             <div className="pi rv" key={p.title}>

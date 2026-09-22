@@ -18,6 +18,9 @@ export interface NeonTextProps {
   lineHeight?: number;
   align?: "left" | "center";
   fluid?: boolean;
+  fillRest?: [number, number, number] | null;
+  fillHi?: [number, number, number] | null;
+  fillGlow?: number;
   className?: string;
   /** Plays once when scrolled into view (Design.md: "section headings play once when scrolled into view"). */
   playOnView?: boolean;
@@ -26,11 +29,10 @@ export interface NeonTextProps {
 }
 
 /**
- * React wrapper around the vanilla `Neon` engine (Design.md section 4).
- * Renders one hidden `.line` span per line for the engine to read text/tone
- * from, then hands the host element to `Neon`, which replaces the content
- * with the animated SVG. The host keeps an aria-label with the real text.
- */
+  * React wrapper around the vanilla `Neon` engine (Design.md section 4).
+  * Direct lines prop pass ensures deterministic rendering in React StrictMode
+  * and avoids fragile DOM querying or wiping out React tree.
+  */
 export function NeonText({
   as = "h2",
   lines,
@@ -40,6 +42,9 @@ export function NeonText({
   lineHeight = 1.1,
   align = "left",
   fluid = false,
+  fillRest,
+  fillHi,
+  fillGlow,
   className,
   playOnView = true,
   instanceRef,
@@ -52,17 +57,35 @@ export function NeonText({
     if (!host) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const neon = new Neon(host, { fs: fontSize, ls: letterSpacing, lh: lineHeight, align, fluid });
+    const neon = new Neon(host, {
+      fs: fontSize,
+      ls: letterSpacing,
+      lh: lineHeight,
+      align,
+      fluid,
+      fillRest,
+      fillHi,
+      fillGlow,
+      lines,
+    });
     neonRef.current = neon;
     if (instanceRef) instanceRef.current = neon;
     neon.layout();
 
-    if (reduced) {
-      neon.settle();
-      return;
+    // Re-layout when web fonts are ready to ensure perfect geometric contour mapping
+    if (typeof document !== "undefined" && document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        neon.layout();
+        if (reduced) neon.settle();
+      });
     }
 
-    if (!playOnView) return;
+    if (reduced) {
+      neon.settle();
+      return () => neon.abort();
+    }
+
+    if (!playOnView) return () => neon.abort();
 
     const io = new IntersectionObserver(
       (entries) => {
@@ -73,12 +96,15 @@ export function NeonText({
           }
         }
       },
-      { threshold: 0.4 }
+      { threshold: 0.3 }
     );
     io.observe(host);
-    return () => io.disconnect();
+    return () => {
+      io.disconnect();
+      neon.abort();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fontSize, letterSpacing, lineHeight, align, fluid, fillRest, fillHi, fillGlow, lines, playOnView]);
 
   const Tag = as as any;
   return (
@@ -86,10 +112,6 @@ export function NeonText({
       ref={hostRef}
       className={className}
       data-aria={ariaLabel ?? lines.map((l) => l.text).join(" ")}
-    >
-      {lines.map((l, i) => (
-        <span key={i} className="line" data-text={l.text} data-tone={l.tone} />
-      ))}
-    </Tag>
+    />
   );
 }

@@ -70,7 +70,7 @@ function contour(ch: string, fs: number, font: string, ext: { x: number; width: 
   const cctx = canvasCtx();
   const cvs = sharedCanvas!;
   const pad = Math.ceil(fs * 0.35);
-  const w = Math.ceil(ext.width) + pad * 2;
+  const w = Math.ceil(Math.max(ext.width, fs * 0.5)) + pad * 2;
   const h = Math.ceil(fs * 1.6);
   const base = Math.round(fs * 1.15);
   cvs.width = w;
@@ -100,7 +100,18 @@ function contour(ch: string, fs: number, font: string, ext: { x: number; width: 
       b = x;
     }
   }
-  if (a < 0) return null;
+  if (a < 0) {
+    const wEst = ext.width > 0 ? ext.width : fs * 0.55;
+    return {
+      x0: ext.x,
+      x1: ext.x + wEst,
+      cx: ext.x + wEst / 2,
+      top: () => baseY - fs * 0.75,
+      bot: () => baseY + fs * 0.15,
+      rev: 0,
+      glow: 0,
+    };
+  }
   let lt = top[a]!,
     lb = bot[a]!;
   for (let x = a; x <= b; x++) {
@@ -126,7 +137,12 @@ function contour(ch: string, fs: number, font: string, ext: { x: number; width: 
   };
 }
 
-interface NeonOptions {
+export interface NeonLineInput {
+  text: string;
+  tone?: NeonTone;
+}
+
+export interface NeonOptions {
   fs: number;
   ls?: number;
   lh?: number;
@@ -135,6 +151,7 @@ interface NeonOptions {
   fillRest?: [number, number, number] | null;
   fillHi?: [number, number, number] | null;
   fillGlow?: number;
+  lines?: NeonLineInput[];
 }
 
 interface NeonLine {
@@ -172,9 +189,9 @@ interface Timeline {
 
 let NID = 0;
 
-/** One instance per heading. `lines` come from `<span class="line" data-text data-tone>` children of the host. */
+/** One instance per heading. `lines` come from opts.lines or `<span class="line">` children. */
 export class Neon {
-  o: Required<NeonOptions>;
+  o: Required<Omit<NeonOptions, "lines">> & { lines?: NeonLineInput[] };
   id: number;
   host: HTMLElement;
   svg: SVGSVGElement;
@@ -184,7 +201,7 @@ export class Neon {
   private abortFlag = false;
 
   constructor(host: HTMLElement, opts: NeonOptions) {
-    const defaults: Required<NeonOptions> = {
+    const defaults: Required<Omit<NeonOptions, "lines">> = {
       fs: 64,
       ls: -0.045,
       lh: 1.1,
@@ -199,13 +216,25 @@ export class Neon {
     this.id = ++NID;
     this.host = host;
 
-    const lineEls = Array.from(host.querySelectorAll<HTMLElement>(".line"));
-    const src = lineEls.map((s) => ({
-      text: s.dataset.text ?? "",
-      tone: TONES[(s.dataset.tone as NeonTone) || "ice"],
-    }));
+    let src: { text: string; tone: (typeof TONES)[NeonTone] }[] = [];
+    if (opts.lines && opts.lines.length > 0) {
+      src = opts.lines.map((l) => ({
+        text: l.text,
+        tone: TONES[l.tone || "ice"],
+      }));
+    } else {
+      const lineEls = Array.from(host.querySelectorAll<HTMLElement>(".line"));
+      src = lineEls.map((s) => ({
+        text: s.dataset.text ?? "",
+        tone: TONES[(s.dataset.tone as NeonTone) || "ice"],
+      }));
+    }
+
     host.setAttribute("aria-label", host.dataset.aria || src.map((s) => s.text).join(" "));
-    host.textContent = "";
+
+    // Clean up any previously injected SVG to support clean React re-renders
+    const existingSvgs = Array.from(host.querySelectorAll("svg.neon"));
+    existingSvgs.forEach((s) => s.remove());
 
     const svg = (this.svg = mk("svg", { "aria-hidden": "true" }, host));
     svg.setAttribute("class", "neon");
@@ -257,15 +286,22 @@ export class Neon {
   layout() {
     const o = this.o,
       fs = o.fs,
-      font = `800 ${fs}px Inter, system-ui, sans-serif`;
+      font = `800 ${fs}px "Syne", "Plus Jakarta Sans", system-ui, sans-serif`;
     let maxW = 0;
     this.lines.forEach((L) => {
-      L.w = L.tFill.getBBox().width;
+      try {
+        L.w = L.tFill.getBBox().width;
+      } catch {
+        L.w = 0;
+      }
+      if (!L.w || L.w === 0) {
+        L.w = Math.max(1, L.text.length) * fs * 0.62;
+      }
       maxW = Math.max(maxW, L.w);
     });
     const pad = fs * 0.14;
     this.W = Math.ceil(maxW + pad * 2);
-    this.H = Math.ceil(fs * o.lh * this.lines.length + fs * 0.3);
+    this.H = Math.ceil(fs * o.lh * Math.max(1, this.lines.length) + fs * 0.3);
     this.svg.setAttribute("viewBox", `0 0 ${this.W} ${this.H}`);
     if (!o.fluid) this.svg.style.width = `${this.W}px`;
 
@@ -276,7 +312,13 @@ export class Neon {
       L.ink = [];
       Array.from(L.text).forEach((ch, i) => {
         if (ch === " ") return;
-        const ext = L.tFill.getExtentOfChar(i);
+        let ext = { x: x + i * (fs * 0.6), width: fs * 0.6 };
+        try {
+          const charExt = L.tFill.getExtentOfChar(i);
+          if (charExt && charExt.width > 0) ext = charExt;
+        } catch {
+          // fallback
+        }
         const c = contour(ch, fs, font, ext, L.y);
         if (c) {
           c.span = L.spans[i];
@@ -286,6 +328,9 @@ export class Neon {
       if (L.ink.length) {
         L.startX = L.ink[0]!.x0;
         L.endX = L.ink[L.ink.length - 1]!.x1;
+      } else {
+        L.startX = x;
+        L.endX = x + L.w;
       }
     });
     this.applyTone();
@@ -312,7 +357,9 @@ export class Neon {
     const fr = this.fillRest(L),
       fh = this.o.fillHi || L.tone.hi;
     c.span.style.fill = `rgb(${lerp(fr[0], fh[0], k) | 0},${lerp(fr[1], fh[1], k) | 0},${lerp(fr[2], fh[2], k) | 0})`;
-    c.span.style.fillOpacity = alpha.toFixed(3);
+    // If fillRest is explicitly set, guarantee baseline opacity so physical letterform is visible
+    const baseOpacity = this.o.fillRest ? 0.75 : 0;
+    c.span.style.fillOpacity = Math.max(alpha, baseOpacity).toFixed(3);
   }
 
   private hideAll() {

@@ -1,5 +1,3 @@
-import { NeonText } from "@/components/neon/NeonText";
-
 const rows = [
   { id: "CASE-0007", tone: "fraud" as const, pill: "Fraud", risk: 87, prob: 82, note: "Shared device with two confirmed cases." },
   { id: "CASE-0012", tone: "legit" as const, pill: "Legitimate", risk: 91, prob: 9, note: "Known device, recurring purchase, three similar cleared cases." },
@@ -12,16 +10,10 @@ export function ScoreSection() {
       <div className="wrap two">
         <div>
           <p className="label rv">SCORE VERSUS EVIDENCE</p>
-          <NeonText
-            as="h2"
-            className="title neon-title"
-            fontSize={64}
-            ariaLabel="A high score is not a verdict."
-            lines={[
-              { text: "A high score", tone: "ice" },
-              { text: "is not a verdict.", tone: "fire" },
-            ]}
-          />
+          <h2 className="sec-title rv">
+            <span>A high score </span>
+            <span className="highlight">is not a verdict.</span>
+          </h2>
           <p className="lead rv">
             Many transactions above 0.7 are legitimate, and some fraud hides behind a low score. TRACE uses the risk
             score as <b>one input</b>, then weighs behaviour, device, card history, connected cards, billing region

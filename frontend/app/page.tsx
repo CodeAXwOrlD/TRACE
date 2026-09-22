@@ -27,7 +27,7 @@ export default function LandingPage() {
       <StarDefs />
       {!introDone && <IntroSequence onDone={() => setIntroDone(true)} />}
       <Nav />
-      <Hero />
+      <Hero active={introDone} />
       <ScoreSection />
       <HowSection />
       <OutcomesSection />

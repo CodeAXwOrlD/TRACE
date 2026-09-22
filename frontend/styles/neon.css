@@ -13,9 +13,10 @@
   visibility: hidden;
 }
 .neon text {
-  font-family: var(--sans);
+  font-family: var(--font-display);
   font-weight: 800;
   font-kerning: normal;
+  letter-spacing: inherit;
 }
 .neon .nfill {
   fill: #e9eef3;
