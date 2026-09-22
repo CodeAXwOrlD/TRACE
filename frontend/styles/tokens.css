@@ -1,0 +1,78 @@
+/* Design tokens — Design.md section 2-3, ported verbatim from
+   reference/trace-cinematic-v2.html so the two never drift. */
+:root {
+  --bg: #050608;
+  --panel: #0a0e13;
+  --panel-soft: #0d1218;
+  --white: #f4f6f8;
+  --muted: #8894a0;
+  --dim: #56616c;
+
+  --orange: #ec6408;
+  --orange-soft: #ff9a52;
+  --blue: #3e9bd0;
+  --green: #3bd29d;   /* legitimate */
+  --red: #ff4b42;     /* fraud */
+  --amber: #feba12;   /* uncertain */
+
+  --border: rgba(255, 255, 255, 0.09);
+
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+
+/* Background atmosphere: two faint radial glows + 80px grid + vignette (Design.md #2). */
+.atmo {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 78% 26%, rgba(62, 155, 208, 0.09), transparent 32%),
+    radial-gradient(circle at 18% 60%, rgba(236, 100, 8, 0.065), transparent 32%),
+    var(--bg);
+}
+.gridfx {
+  position: fixed;
+  inset: 0;
+  z-index: -9;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.6) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.6) 1px, transparent 1px);
+  background-size: 80px 80px;
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent 75%);
+  mask-image: linear-gradient(to bottom, #000, transparent 75%);
+}
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: -8;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55));
+}
+
+/* Scroll-reveal utility (Design.md #6). */
+.rv {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 1s ease, transform 1s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.rv.in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
