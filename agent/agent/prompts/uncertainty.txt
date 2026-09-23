@@ -1,0 +1,20 @@
+Evaluate the degree of uncertainty in this fraud investigation.
+
+ALLOWED DECISIONS:
+- "LOW": High volume of concordant evidence; decisive graph links, device confirmation, or clear legitimate auth history.
+- "MEDIUM": Moderate evidence available, but with minor gaps (e.g. unverified IP geolocation, lack of recent baseline).
+- "HIGH": Conflicting signals (e.g. high statistical risk score but legitimate 3DS verification and known device), or very sparse transaction history.
+
+FACTS:
+- Transaction ID: {transaction_id}
+- Fraud Probability: {fraud_probability}
+- Number of Evidence Items: {evidence_count}
+
+STRUCTURED EVIDENCE:
+{evidence_findings}
+
+UNKNOWNS:
+{unknowns}
+
+REQUIRED OUTPUT:
+Output the uncertainty level ("LOW", "MEDIUM", or "HIGH") and concise reason.

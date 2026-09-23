@@ -1,0 +1,29 @@
+Synthesize a professional, defensible fraud investigation rationale for bank analysts and compliance auditors.
+
+FACTS:
+- Case ID: {case_id}
+- Trigger Transaction ID: {transaction_id}
+- Card ID: {card_id}
+- Exposure USD: ${exposure_usd}
+- First Suspicious Transaction ID: {first_suspicious_txn_id}
+- Episode Transactions: {episode_count} txns
+
+DETERMINISTIC EVALUATION:
+- Fraud Probability: {fraud_probability}
+- Uncertainty: {uncertainty}
+- Verdict: {verdict}
+- Pattern: {pattern}
+- Matched Policy: {policy}
+- Prescribed Actions: {next_actions}
+
+EVIDENCE AUDIT TRAIL:
+{evidence_findings}
+
+SIMILAR HISTORICAL CASES:
+{similar_cases}
+
+GUIDELINES:
+1. Ground the explanation in the factual evidence (device links, velocity, amounts, first suspicious transaction).
+2. Explicitly explain why policy {policy} was selected and why actions {next_actions} are warranted.
+3. If uncertainty is HIGH or verdict is UNCERTAIN, explain what evidence is missing or conflicting.
+4. Output a concise, coherent 2-4 sentence narrative.
