@@ -1,0 +1,24 @@
+Analyze the following financial transaction facts and structured evidence to classify the fraud typology.
+
+ALLOWED DECISIONS:
+- "card_testing": Micro-transactions ($0.50-$2.00) followed by a larger test or rapid repeated authorizations.
+- "cnp": High-risk card-not-present online transaction with behavioral anomalies.
+- "cnp_new_device": Card-not-present transaction originating from an unrecognized device or a device linked across multiple other customer cards.
+- "out_of_region": Geo-velocity impossibility (e.g. transactions in different countries within hours).
+- "account_takeover": Sudden change in purchasing velocity, credentials, or high-velocity device migration.
+- "undocumented": Genuine anomaly not fitting established typologies.
+- "none": Consistent with legitimate cardholder baseline.
+
+FACTS:
+- Transaction ID: {transaction_id}
+- Amount: ${amount}
+- Merchant: {merchant}
+- Timestamp: {timestamp}
+- Connected Cards: {connected_cards_count}
+- Device ID: {device_id}
+
+STRUCTURED EVIDENCE FINDINGS:
+{evidence_findings}
+
+REQUIRED OUTPUT:
+Classify into one of the allowed decisions above, provide confidence (0.0 to 1.0), and give a short 1-sentence analytical reason.
