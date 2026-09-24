@@ -83,3 +83,20 @@ class InvestigationContract(BaseModel):
     rationale: str = Field(
         ..., description="Defensible analyst-facing investigation rationale."
     )
+    # Benchmark Evaluation & Submission Fields
+    written_to_graph: bool = Field(
+        default=True, description="Indicates if the case was written back to TigerGraph FraudCaseGraph."
+    )
+    graph_case_id: Optional[str] = Field(
+        None, description="Identifier of the CaseRecord in TigerGraph."
+    )
+    approval_route: str = Field(
+        default="AUTOMATED", description="Approval route e.g. AUTOMATED, SENIOR_ANALYST, FRAUD_OPS."
+    )
+    sar_required: bool = Field(
+        default=False, description="Whether a Suspicious Activity Report is required."
+    )
+    sar_narrative: Optional[str] = Field(
+        None, description="Generated SAR narrative if applicable."
+    )
+

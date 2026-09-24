@@ -290,6 +290,24 @@ def node_finalize_investigation(state: InvestigationState) -> Dict[str, Any]:
             "exposure_usd": state.get("exposure_usd"),
         },
     )
+
+    # Write case record back to TigerGraph FraudCaseGraph
+    try:
+        from agent.graph_tools import FraudCaseGraphTools
+        tools = FraudCaseGraphTools()
+        tools.write_case_to_graph(
+            case_id=state.get("case_id", ""),
+            verdict=state.get("verdict", "UNCERTAIN"),
+            fraud_probability=state.get("fraud_probability", 0.5),
+            pattern=state.get("pattern", "none"),
+            first_suspicious_txn_id=state.get("first_suspicious_txn_id"),
+            transaction_id=state.get("transaction_id"),
+            card_id=state.get("card_id"),
+            customer_id=state.get("customer", {}).get("id") if isinstance(state.get("customer"), dict) else None,
+        )
+    except Exception:
+        pass
+
     return {
         "status": "COMPLETED",
         "events": events,

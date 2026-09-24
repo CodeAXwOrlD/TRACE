@@ -20,8 +20,8 @@ export function Hero({ active = true }: { active?: boolean }) {
           and reads what earlier cases found. Then it tells the analyst what to do: <b>block, close or escalate.</b>
         </p>
         <div className="actions anim" style={{ ["--d" as any]: ".7s" }}>
-          <a className="btn" href="#how">
-            Open a live case
+          <a className="btn" href="/investigations">
+            Open a live case →
           </a>
           <a className="btn ghost" href="#score">
             Why not just use the score?

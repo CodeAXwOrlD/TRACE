@@ -62,9 +62,9 @@ export function StartInvestigationCard() {
           <button
             type="submit"
             disabled={loading || !transactionId.trim()}
-            className="bg-orange hover:bg-orange/90 text-white font-mono text-xs font-semibold px-4 py-2 rounded transition-all shadow-md disabled:opacity-50 whitespace-nowrap"
+            className="inline-flex items-center justify-center gap-2 bg-[#ec6408] hover:bg-[#ff7418] text-white font-sans text-xs font-semibold px-5 py-2.5 rounded-lg transition-all shadow-[0_4px_20px_rgba(236,100,8,0.3)] hover:shadow-[0_8px_25px_rgba(236,100,8,0.5)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap cursor-pointer"
           >
-            {loading ? "Starting…" : "INVESTIGATE →"}
+            {loading ? "Starting…" : "Investigate Case →"}
           </button>
         </form>
       </div>

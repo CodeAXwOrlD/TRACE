@@ -72,6 +72,28 @@ class HistoricalCaseMatcher:
 
         results: List[SimilarCaseContract] = []
 
+        # Check dynamic historical memory dataset when card_id or customer_id matches
+        card_id = transaction.get("card_id")
+        cust_id = transaction.get("customer_id")
+        if card_id or cust_id:
+            try:
+                from agent.historical_memory import HistoricalCaseMemory
+                mem = HistoricalCaseMemory()
+                real_matches = mem.find_similar_cases(card_id=card_id, customer_id=cust_id, limit=limit)
+                for rm in real_matches:
+                    results.append(
+                        SimilarCaseContract(
+                            case_id=rm.get("case_id", "CC-HIST"),
+                            similarity=0.85 if rm.get("outcome") == "confirmed_fraud" else 0.70,
+                            outcome=rm.get("outcome", "confirmed_fraud"),
+                            reason=rm.get("analyst_notes", rm.get("pattern", "Historical case precedence")),
+                        )
+                    )
+                if results:
+                    return results[:limit]
+            except Exception:
+                pass
+
         for case in HISTORICAL_CASES_MEMORY:
             score = 0.0
             reasons = []

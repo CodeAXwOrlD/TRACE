@@ -159,6 +159,7 @@ def test_7_case_and_entities_endpoints():
     # Close Case
     close_res = client.post("/api/cases/CASE-0007/close", json={"verdict": "FRAUD"})
     assert close_res.status_code == 200
+    
     assert close_res.json()["success"] is True
 
     # Lookup Transaction

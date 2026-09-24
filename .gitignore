@@ -1,16 +1,16 @@
-node_modules/
-.next/
+# Real hackathon dataset
+data/
+
+# Python
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
 .venv/
-env/
-venv/
-*.egg-info/
-dist/
-build/
-.pytest_cache/
-*.log
-.DS_Store
+
+# Environment
 .env
+.env.*
+!.env.example
+
+# Frontend
+node_modules/
+.next/

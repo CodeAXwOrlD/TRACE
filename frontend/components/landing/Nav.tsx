@@ -15,8 +15,8 @@ export function Nav() {
       </div>
       <div className="nav-r">
         <StatusIndicator label="AGENT ONLINE" tone="green" />
-        <a className="btn-line" href="#how" style={{ border: "1px solid rgba(236,100,8,.6)", padding: "9px 16px", borderRadius: 7, fontSize: 12, fontWeight: 500 }}>
-          See a live case
+        <a className="btn" href="/investigations" style={{ padding: "8px 16px", fontSize: "12px" }}>
+          See a live case →
         </a>
       </div>
     </nav>

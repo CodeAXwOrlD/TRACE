@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from datetime import datetime, timezone
 import os
 from dotenv import load_dotenv
-from app.graph.client import client
+from ..graph.client import client
 
 load_dotenv()
 

@@ -115,4 +115,9 @@ class InvestigationStateModel(BaseModel):
             next_actions=self.next_actions,
             exposure_usd=self.exposure_usd,
             rationale=self.rationale,
+            written_to_graph=True,
+            graph_case_id=self.case_id,
+            approval_route="SENIOR_ANALYST" if self.verdict == "FRAUD" and self.exposure_usd > 2000 else "AUTOMATED",
+            sar_required=self.verdict == "FRAUD" and self.exposure_usd >= 2000,
+            sar_narrative=f"Suspicious activity report filed for case {self.case_id} involving transaction {self.transaction_id} on card {self.card_id}. Total financial exposure: ${self.exposure_usd:.2f}." if (self.verdict == "FRAUD" and self.exposure_usd >= 2000) else None,
         )

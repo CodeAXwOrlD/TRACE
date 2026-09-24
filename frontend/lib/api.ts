@@ -204,7 +204,8 @@ export async function getDevice(id: string): Promise<DeviceProfile | undefined> 
 
 export async function getInvestigations(): Promise<Investigation[]> {
   if (FORCE_MOCKS) return mockInvestigations;
-  return fetchLive<Investigation[]>("/api/investigations");
+  const raw = await fetchLive<unknown[]>("/api/investigations");
+  return raw.map((r) => contractToInvestigationViewModel(r));
 }
 
 export async function getInvestigation(id: string): Promise<Investigation | undefined> {
