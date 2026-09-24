@@ -22,7 +22,7 @@ export function EvidenceCard({ evidence }: { evidence: EvidenceItem }) {
         <span>{evidence.source}</span>
         <span>Confidence {formatPct(evidence.confidence)}</span>
       </div>
-      <div className="font-mono text-[10px] text-dim mt-1">{formatTimestamp(evidence.timestamp)}</div>
+      <div className="font-mono text-[10px] text-dim mt-1" suppressHydrationWarning>{formatTimestamp(evidence.timestamp)}</div>
     </div>
   );
 }

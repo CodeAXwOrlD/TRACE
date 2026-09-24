@@ -15,23 +15,24 @@ logger = logging.getLogger(__name__)
 
 
 def get_llm_provider() -> BaseLLMProvider:
-    """Return the configured LLM provider according to environment settings."""
+    """Return the configured real LLM provider according to environment settings."""
     if settings.ai_mock_mode:
-        logger.info("Using MockLLMProvider (AI_MOCK_MODE=true)")
+        logger.info("Using MockLLMProvider (AI_MOCK_MODE=true explicitly configured)")
         return MockLLMProvider()
 
     provider = settings.ai_provider.lower()
 
-    if provider == "gemini":
-        if not settings.gemini_api_key:
-            logger.warning("GEMINI_API_KEY missing, falling back to MockLLMProvider.")
-            return MockLLMProvider()
-        return GeminiProvider(api_key=settings.gemini_api_key, model=settings.gemini_model)
-
     if provider == "groq":
         if not settings.groq_api_key:
-            logger.warning("GROQ_API_KEY missing, falling back to MockLLMProvider.")
-            return MockLLMProvider()
+            raise ValueError("GROQ_API_KEY is not configured in backend/.env. Real LLM inference requires a valid GROQ_API_KEY.")
         return GroqProvider(api_key=settings.groq_api_key, model=settings.groq_model)
 
-    return MockLLMProvider()
+    if provider == "gemini":
+        if not settings.gemini_api_key:
+            raise ValueError("GEMINI_API_KEY is not configured in backend/.env. Real LLM inference requires a valid GEMINI_API_KEY.")
+        return GeminiProvider(api_key=settings.gemini_api_key, model=settings.gemini_model)
+
+    if provider == "mock":
+        return MockLLMProvider()
+
+    raise ValueError(f"Unsupported AI provider '{provider}'. Must be 'groq' or 'gemini'.")

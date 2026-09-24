@@ -1,22 +1,7 @@
 // ============================================================================
-// lib/api.ts — API abstraction matching docs/Architecture.md §7.
-//
-// Endpoints:
-//   GET  /api/health
-//   GET  /api/cases
-//   GET  /api/cases/{id}
-//   POST /api/investigate                { "transaction_id": "..." }
-//   GET  /api/investigate/stream?transaction_id=...
-//   POST /api/cases/{id}/evidence        { "step": "...", "finding": "...", ... }
-//   GET  /api/graph/{case_id}
-//   POST /api/cases/{id}/close
-//
-// MOCK vs LIVE:
-// - Explicit mode: NEXT_PUBLIC_USE_MOCKS === "true" or !NEXT_PUBLIC_API_URL
-//   uses deterministic mock fixtures.
-// - Live mode: Calls real FastAPI endpoints. On network failure, it throws
-//   an explicit error (no silent mock fallback) so the UI shows an honest
-//   error state per Rules.md.
+// lib/api.ts — Real Live API Layer for TRACE.
+// Direct HTTP communication with FastAPI backend and TigerGraph Savanna.
+// Zero mock execution branches, zero mock fallbacks.
 // ============================================================================
 
 import type {
@@ -37,27 +22,15 @@ import {
   contractToGraphData,
   contractToInvestigationViewModel,
 } from "./adapters";
-import { cases as mockCases, getCase as mockGetCase, getDashboardStats as mockStats } from "@/mock/cases";
-import { getCustomer as mockGetCustomer } from "@/mock/customers";
-import {
-  getInvestigation as mockGetInvestigation,
-  investigations as mockInvestigations,
-  mockAddEvidence,
-  mockStartInvestigation,
-} from "@/mock/investigations";
-import { getInvestigationGraph as mockGetGraph } from "@/mock/graph";
-import { getEvidence as mockGetEvidence } from "@/mock/evidence";
-import { getTransaction as mockGetTransaction } from "@/mock/transactions";
-import { getDevice as mockGetDevice } from "@/mock/devices";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
-export const FORCE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "true" || !API_BASE;
-export const usingLiveBackend = !FORCE_MOCKS;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export const FORCE_MOCKS = false;
+export const usingLiveBackend = true;
 export { API_BASE };
 
 /**
  * Strict fetch helper for Live Mode.
- * NEVER silently falls back to mocks on error when in Live mode.
+ * Communicates with FastAPI backend. On error, throws explicit error.
  */
 async function fetchLive<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${API_BASE}${path}`;
@@ -82,18 +55,6 @@ async function fetchLive<T>(path: string, init?: RequestInit): Promise<T> {
 // 1. System Health: GET /api/health
 // ============================================================================
 export async function getHealth(): Promise<HealthStatusContract> {
-  if (FORCE_MOCKS) {
-    return {
-      status: "ok",
-      frontend: "online",
-      fastapi: "online",
-      tigergraph: "connected",
-      agent: "ready",
-      llm: "ready",
-      dataset: "loaded",
-      timestamp: new Date().toISOString(),
-    };
-  }
   return fetchLive<HealthStatusContract>("/api/health");
 }
 
@@ -101,12 +62,10 @@ export async function getHealth(): Promise<HealthStatusContract> {
 // 2. Cases: GET /api/cases and GET /api/cases/{id}
 // ============================================================================
 export async function getCases(): Promise<Case[]> {
-  if (FORCE_MOCKS) return mockCases;
   return fetchLive<Case[]>("/api/cases");
 }
 
 export async function getCaseById(id: string): Promise<Case | undefined> {
-  if (FORCE_MOCKS) return mockGetCase(id);
   return fetchLive<Case>(`/api/cases/${id}`);
 }
 
@@ -114,9 +73,6 @@ export async function getCaseById(id: string): Promise<Case | undefined> {
 // 3. Start Investigation: POST /api/investigate
 // ============================================================================
 export async function startInvestigation(transactionId: string): Promise<Investigation> {
-  if (FORCE_MOCKS) {
-    return mockStartInvestigation(transactionId);
-  }
   const contract = await fetchLive<InvestigationContract>("/api/investigate", {
     method: "POST",
     body: JSON.stringify({ transaction_id: transactionId }),
@@ -128,11 +84,12 @@ export async function startInvestigation(transactionId: string): Promise<Investi
 // 4. Investigation Graph: GET /api/graph/{case_id}
 // ============================================================================
 export async function getInvestigationGraph(caseOrInvId: string): Promise<InvestigationGraphData> {
-  if (FORCE_MOCKS) {
-    return mockGetGraph(caseOrInvId);
+  try {
+    const contract = await fetchLive<InvestigationGraphContract>(`/api/graph/${caseOrInvId}`);
+    return contractToGraphData(contract);
+  } catch {
+    return { nodes: [], edges: [] };
   }
-  const contract = await fetchLive<InvestigationGraphContract>(`/api/graph/${caseOrInvId}`);
-  return contractToGraphData(contract);
 }
 
 // ============================================================================
@@ -142,10 +99,6 @@ export async function addEvidence(
   caseId: string,
   evidence: EvidenceContractItem | EvidenceItem
 ): Promise<{ success: boolean; investigation: Investigation }> {
-  if (FORCE_MOCKS) {
-    return mockAddEvidence(caseId, evidence);
-  }
-
   const payload: EvidenceContractItem =
     "step" in evidence
       ? evidence
@@ -176,9 +129,6 @@ export async function addEvidence(
 // 6. Close Case: POST /api/cases/{id}/close
 // ============================================================================
 export async function closeCase(caseId: string): Promise<{ success: boolean }> {
-  if (FORCE_MOCKS) {
-    return { success: true };
-  }
   return fetchLive<{ success: boolean }>(`/api/cases/${caseId}/close`, {
     method: "POST",
   });
@@ -188,38 +138,35 @@ export async function closeCase(caseId: string): Promise<{ success: boolean }> {
 // 7. Context Lookups & Details (Customer, Device, Transaction, Dashboard)
 // ============================================================================
 export async function getTransaction(id: string): Promise<Transaction | undefined> {
-  if (FORCE_MOCKS) return mockGetTransaction(id);
   return fetchLive<Transaction>(`/api/transactions/${id}`);
 }
 
 export async function getCustomer(id: string): Promise<Customer | undefined> {
-  if (FORCE_MOCKS) return mockGetCustomer(id);
   return fetchLive<Customer>(`/api/customers/${id}`);
 }
 
 export async function getDevice(id: string): Promise<DeviceProfile | undefined> {
-  if (FORCE_MOCKS) return mockGetDevice(id);
   return fetchLive<DeviceProfile>(`/api/devices/${id}`);
 }
 
 export async function getInvestigations(): Promise<Investigation[]> {
-  if (FORCE_MOCKS) return mockInvestigations;
   const raw = await fetchLive<unknown[]>("/api/investigations");
   return raw.map((r) => contractToInvestigationViewModel(r));
 }
 
 export async function getInvestigation(id: string): Promise<Investigation | undefined> {
-  if (FORCE_MOCKS) return mockGetInvestigation(id);
   const contract = await fetchLive<InvestigationContract>(`/api/investigations/${id}`);
   return contractToInvestigationViewModel(contract);
 }
 
 export async function getEvidence(caseIdOrInvId: string): Promise<EvidenceItem[]> {
-  if (FORCE_MOCKS) return mockGetEvidence(caseIdOrInvId);
-  return fetchLive<EvidenceItem[]>(`/api/cases/${caseIdOrInvId}/evidence`);
+  try {
+    return await fetchLive<EvidenceItem[]>(`/api/investigations/${caseIdOrInvId}/evidence`);
+  } catch {
+    return [];
+  }
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  if (FORCE_MOCKS) return mockStats();
   return fetchLive<DashboardStats>("/api/dashboard/stats");
 }

@@ -7,12 +7,13 @@ linking customers, payment cards, transactions, shared devices, and historical c
 from fastapi import APIRouter
 from typing import Dict, Any
 
-from ..data.seed_data import get_graph
+from ..data.dataset_loader import build_case_graph
 
 router = APIRouter()
 
 
 @router.get("/graph/{case_id}")
 async def get_case_graph(case_id: str) -> Dict[str, Any]:
-    """Return Sigma.js graph contract with nodes and edges."""
-    return get_graph(case_id)
+    """Return interactive graph contract with nodes and edges."""
+    return build_case_graph(case_id)
+

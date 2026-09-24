@@ -72,7 +72,7 @@ export function InvestigationHeader({ investigation }: { investigation: Investig
             <span className="text-dim">|</span>
             <span>Trigger: <strong className="text-orange">{investigation.triggerTransactionId}</strong></span>
             <span className="text-dim">|</span>
-            <span>Opened: <strong className="text-dim">{formatTimestamp(investigation.createdAt)}</strong></span>
+            <span>Opened: <strong className="text-dim" suppressHydrationWarning>{formatTimestamp(investigation.createdAt)}</strong></span>
           </div>
         </div>
 

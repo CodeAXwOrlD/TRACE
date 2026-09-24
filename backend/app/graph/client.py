@@ -7,12 +7,10 @@ import os
 
 class TigerGraphClient:
     def __init__(self):
-        self.host = os.environ.get("TG_HOST") or os.environ.get("TIGERGRAPH_HOST", "http://localhost:9000")
-        self.graphname = os.environ.get("TG_GRAPHNAME") or os.environ.get("TIGERGRAPH_GRAPH", "FraudCaseGraph")
-        self.token = os.environ.get("TG_TOKEN") or os.environ.get("TIGERGRAPH_TOKEN") or os.environ.get("TG_SECRET", "")
-        self.username = os.environ.get("TIGERGRAPH_USERNAME", "tigergraph")
-        self.password = os.environ.get("TIGERGRAPH_PASSWORD", "")
-        self.mock_mode = os.environ.get("BACKEND_MOCK_MODE", "true").lower() == "true"
+        self.host = os.environ.get("TG_HOST", "http://localhost:9000")
+        self.graphname = os.environ.get("TG_GRAPHNAME", "FraudCaseGraph")
+        self.token = os.environ.get("TG_TOKEN") or os.environ.get("TG_SECRET", "")
+        self.mock_mode = os.environ.get("BACKEND_MOCK_MODE", "false").lower() == "true"
         self.conn = None
 
     def connect(self):

@@ -19,7 +19,6 @@ from ..data.dataset_loader import (
     get_case_by_id,
     build_initial_state_for_case,
 )
-from ..data.seed_data import build_initial_state_for_txn  # keep for CASE-000x demos
 
 router = APIRouter()
 runner = InvestigationRunner()
@@ -42,7 +41,7 @@ def _case_to_investigation_contract(case: Dict[str, Any]) -> Dict[str, Any]:
 
     return {
         "case_id": case["id"],
-        "investigation_id": case["id"].lower().replace("hhg-", "inv-").replace("case-", "inv-"),
+        "investigation_id": case["id"].lower().replace("hhg-", "inv-hhg-").replace("case-", "inv-"),
         "card_id": case.get("cardId", ""),
         "customer_id": case.get("customerId", ""),
         "trigger_transaction_id": case.get("flaggedTxnId", ""),
@@ -83,13 +82,20 @@ def _case_to_investigation_contract(case: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _pre_populate_cache():
-    """Pre-load the 20 benchmark cases into the cache as lightweight stubs."""
+    """Pre-load the 20 benchmark cases into the cache under all common key aliases."""
     for case in load_case_pack():
         cid = case["id"]
-        if cid not in _investigation_cache:
-            _investigation_cache[cid] = _case_to_investigation_contract(case)
-            inv_id = cid.lower().replace("hhg-", "inv-").replace("case-", "inv-")
-            _investigation_cache[inv_id] = _investigation_cache[cid]
+        stub = _case_to_investigation_contract(case)
+        _investigation_cache[cid] = stub
+        _investigation_cache[cid.upper()] = stub
+        _investigation_cache[cid.lower()] = stub
+        inv_id_hhg = cid.lower().replace("hhg-", "inv-hhg-").replace("case-", "inv-")
+        inv_id_short = cid.lower().replace("hhg-", "inv-").replace("case-", "inv-")
+        _investigation_cache[inv_id_hhg] = stub
+        _investigation_cache[inv_id_short] = stub
+        flagged_txn = case.get("flaggedTxnId")
+        if flagged_txn:
+            _investigation_cache[str(flagged_txn)] = stub
 
 
 # Populate on module load
@@ -98,26 +104,28 @@ _pre_populate_cache()
 
 @router.post("/investigate")
 async def start_investigation(payload: Dict[str, Any]):
-    """Run a full LangGraph investigation on a case or transaction ID."""
+    """Run a full LangGraph investigation on a real benchmark case or transaction ID."""
     transaction_id = payload.get("transaction_id", "")
     case_id = payload.get("case_id", "")
 
     if not transaction_id and not case_id:
         raise HTTPException(status_code=400, detail="transaction_id or case_id is required")
 
-    # Try to find a real benchmark case first
+    initial_state = None
     if case_id:
         initial_state = build_initial_state_for_case(case_id)
     elif transaction_id:
-        # Check if it's a benchmark flagged_txn_id
-        initial_state = None
         for case in load_case_pack():
             if case["flaggedTxnId"] == str(transaction_id):
                 initial_state = build_initial_state_for_case(case["id"])
                 break
-        if not initial_state:
-            # Fall back to demo seed for CASE-000x
-            initial_state = build_initial_state_for_txn(transaction_id)
+
+    if not initial_state:
+        target = case_id or transaction_id
+        raise HTTPException(
+            status_code=404,
+            detail=f"TRANSACTION_NOT_FOUND: Entity '{target}' not found in IEEE-CIS benchmark dataset.",
+        )
 
     # Merge any extra payload fields
     for k, v in payload.items():
@@ -130,7 +138,7 @@ async def start_investigation(payload: Dict[str, Any]):
     # Store under multiple keys for lookup flexibility
     cache_id = result.get("case_id", case_id or transaction_id)
     _investigation_cache[cache_id] = result
-    inv_id = str(cache_id).lower().replace("hhg-", "inv-").replace("case-", "inv-")
+    inv_id = str(cache_id).lower().replace("hhg-", "inv-hhg-").replace("case-", "inv-")
     _investigation_cache[inv_id] = result
     if transaction_id:
         _investigation_cache[str(transaction_id)] = result
@@ -141,14 +149,17 @@ async def start_investigation(payload: Dict[str, Any]):
 @router.get("/investigate/stream")
 async def investigate_stream(request: Request, transaction_id: str):
     """SSE real-time stream for a transaction investigation."""
-    # Resolve to a real benchmark case if possible
     initial_state = None
     for case in load_case_pack():
         if case["flaggedTxnId"] == str(transaction_id):
             initial_state = build_initial_state_for_case(case["id"])
             break
+
     if not initial_state:
-        initial_state = build_initial_state_for_txn(transaction_id)
+        raise HTTPException(
+            status_code=404,
+            detail=f"TRANSACTION_NOT_FOUND: Transaction '{transaction_id}' not found in benchmark dataset.",
+        )
 
     async def sse_event_generator():
         async for sse_chunk in runner.stream_events(initial_state, artificial_delay=0.15):
@@ -184,21 +195,20 @@ async def get_investigations() -> List[Dict[str, Any]]:
 
 @router.get("/investigations/{id}")
 async def get_investigation(id: str) -> Dict[str, Any]:
-    """Return single investigation. Runs agent if not yet cached."""
+    """Return single investigation from real dataset. Returns 404 if not found."""
     if id in _investigation_cache:
         return _investigation_cache[id]
 
-    # Try resolving to a real case
     case = get_case_by_id(id)
     if case:
-        return _case_to_investigation_contract(case)
+        contract = _case_to_investigation_contract(case)
+        _investigation_cache[id] = contract
+        return contract
 
-    # Fallback: run agent on demo seed transaction
-    initial_state = build_initial_state_for_txn(id)
-    contract = runner.run(initial_state)
-    result = contract.model_dump()
-    _investigation_cache[id] = result
-    return result
+    raise HTTPException(
+        status_code=404,
+        detail=f"INVESTIGATION_NOT_FOUND: Case '{id}' not found in IEEE-CIS benchmark dataset.",
+    )
 
 
 @router.get("/investigations/{id}/evidence")

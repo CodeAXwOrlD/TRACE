@@ -50,7 +50,7 @@ export function Timeline({
                 }
                 aria-hidden="true"
               />
-              <span className="font-mono text-[10px] text-muted">{formatTimestamp(t.timestamp)}</span>
+              <span className="font-mono text-[10px] text-muted" suppressHydrationWarning>{formatTimestamp(t.timestamp)}</span>
               <span className="font-mono text-xs text-[#dfe4e8]">{formatUsd(t.amount)}</span>
               {isOrigin && (
                 <span className="text-[10px] text-red font-mono font-semibold tracking-tight">

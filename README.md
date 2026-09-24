@@ -89,7 +89,7 @@
 │   ├── app/
 │   │   ├── api/                 # /cases, /investigate/stream, /graph
 │   │   ├── graph/client.py      # TigerGraph connection client
-│   │   └── data/seed_data.py    # Seed cases and transactions
+│   │   └── data/dataset_loader.py # Real benchmark dataset loader
 │   └── requirements.txt         # Backend Python dependencies
 │
 ├── frontend/                    # Next.js 14 Frontend Application
@@ -97,7 +97,7 @@
 │   ├── components/
 │   │   ├── graph/               # Graph visualization (Sigma / Graphology)
 │   │   └── workbench/           # Investigation stream & risk components
-│   └── lib/api.ts               # Resilient API client with mock fallback
+│   └── lib/api.ts               # Production live FastAPI client
 │
 ├── data/
 │   └── raw/                     # IEEE-CIS Fraud Benchmark Dataset

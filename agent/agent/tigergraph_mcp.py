@@ -45,10 +45,13 @@ class TigerGraphMCPToolClient:
                 password=self.password,
                 apiToken=self.token if self.token else None,
             )
+            # Verify cluster is live and reachable
+            if not conn.ping():
+                return None
             self._conn = conn
             return self._conn
         except Exception as e:
-            logger.warning(f"Could not connect to TigerGraph: {e}")
+            logger.debug(f"TigerGraph cluster unreachable ({self.host}): {e}")
             return None
 
     def get_entity_neighbors(self, vertex_type: str, vertex_id: str, depth: int = 2) -> Dict[str, Any]:

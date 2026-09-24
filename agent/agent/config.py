@@ -15,12 +15,12 @@ class AgentSettings(BaseSettings):
 
     # Provider and Mock Mode
     ai_mock_mode: bool = Field(
-        default=True,
+        default=False,
         validation_alias="AI_MOCK_MODE",
         description="When true, uses deterministic mock reasoning without external LLM calls.",
     )
     ai_provider: Literal["mock", "gemini", "groq"] = Field(
-        default="mock",
+        default="groq",
         validation_alias="AI_PROVIDER",
         description="LLM provider: 'mock', 'gemini', or 'groq'.",
     )
@@ -42,7 +42,7 @@ class AgentSettings(BaseSettings):
         description="Groq Cloud API Key.",
     )
     groq_model: str = Field(
-        default="llama-3.3-70b-versatile",
+        default="openai/gpt-oss-20b",
         validation_alias="GROQ_MODEL",
     )
 
@@ -57,7 +57,7 @@ class AgentSettings(BaseSettings):
     )
 
     class Config:
-        env_file = ".env"
+        env_file = ["backend/.env", ".env"]
         extra = "ignore"
 
 

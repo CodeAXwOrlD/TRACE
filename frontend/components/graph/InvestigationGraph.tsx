@@ -17,6 +17,7 @@ export const TIGERGRAPH_THEME = {
     border: "#6ee7b7",
     glow: "rgba(16, 185, 129, 0.45)",
     label: "Customer",
+    shortLabel: "CUST",
     badge: "bg-emerald-500/20 text-emerald-400 border-emerald-500/40",
     icon: User,
   },
@@ -25,6 +26,7 @@ export const TIGERGRAPH_THEME = {
     border: "#fca5a5",
     glow: "rgba(239, 68, 68, 0.45)",
     label: "Card",
+    shortLabel: "CARD",
     badge: "bg-red-500/20 text-red-400 border-red-500/40",
     icon: CreditCard,
   },
@@ -33,6 +35,7 @@ export const TIGERGRAPH_THEME = {
     border: "#fcd34d",
     glow: "rgba(245, 158, 11, 0.5)",
     label: "Transaction",
+    shortLabel: "TXN",
     badge: "bg-amber-500/20 text-amber-400 border-amber-500/40",
     icon: ShieldAlert,
   },
@@ -40,7 +43,8 @@ export const TIGERGRAPH_THEME = {
     fill: "#8b5cf6", // Electric Violet / Purple (matching Savanna Identity/Device)
     border: "#c4b5fd",
     glow: "rgba(139, 92, 246, 0.45)",
-    label: "Identity / Device",
+    label: "Device",
+    shortLabel: "DEV",
     badge: "bg-purple-500/20 text-purple-400 border-purple-500/40",
     icon: Smartphone,
   },
@@ -49,6 +53,7 @@ export const TIGERGRAPH_THEME = {
     border: "#93c5fd",
     glow: "rgba(59, 130, 246, 0.45)",
     label: "CaseRecord",
+    shortLabel: "CASE",
     badge: "bg-blue-500/20 text-blue-400 border-blue-500/40",
     icon: FileText,
   },
@@ -97,13 +102,23 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
   // Fullscreen expand/collapse state
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Close fullscreen on Escape key
+  // Close fullscreen on Escape key & lock document scrolling
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isFullscreen) setIsFullscreen(false);
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
+  }, [isFullscreen]);
+
+  useEffect(() => {
+    if (isFullscreen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
   }, [isFullscreen]);
 
   // Compute organic coordinates using Graphology ForceAtlas2 on mount/data change
@@ -252,15 +267,22 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
     setDraggingId(null);
   };
 
-  // Wheel Zoom
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const zoomFactor = e.deltaY < 0 ? 1.15 : 0.88;
-    setTransform((prev) => {
-      const newK = Math.max(0.4, Math.min(3.5, prev.k * zoomFactor));
-      return { ...prev, k: newK };
-    });
-  };
+  // Isolate wheel zoom so scrolling over the graph canvas does NOT scroll the browser page
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const wheelHandler = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const zoomFactor = e.deltaY < 0 ? 1.15 : 0.88;
+      setTransform((prev) => {
+        const newK = Math.max(0.35, Math.min(3.5, prev.k * zoomFactor));
+        return { ...prev, k: newK };
+      });
+    };
+    el.addEventListener("wheel", wheelHandler, { passive: false });
+    return () => el.removeEventListener("wheel", wheelHandler);
+  }, []);
 
   // Node Drag Initiator
   const startDragNode = (e: React.MouseEvent, node: GraphNode) => {
@@ -311,67 +333,66 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
       onMouseDown={handleMouseDownCanvas}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      onWheel={handleWheel}
     >
       {/* Top Left: TigerGraph Savanna Brand Watermark & Schema Title */}
-      <div className="absolute top-4 left-4 z-20 flex flex-col gap-1 pointer-events-none">
-        <div className="flex items-center gap-2">
-          <span className="flex h-2.5 w-2.5 relative">
+      <div className="absolute top-4 left-4 z-20 flex flex-col gap-1.5 pointer-events-none select-none">
+        <div className="flex items-center gap-2 bg-[#0a0e13]/85 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/[.08] shadow-lg">
+          <span className="flex h-2 w-2 relative">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
-          <span className="font-mono text-[11px] font-bold tracking-wider text-white uppercase flex items-center gap-1.5">
+          <span className="font-sans text-xs font-bold tracking-tight text-white flex items-center gap-1.5">
             <span className="text-orange">FraudCaseGraph</span>
-            <span className="text-dim">•</span>
-            <span className="text-emerald-400">TigerGraph Savanna GSQL</span>
+            <span className="text-white/30">•</span>
+            <span className="text-emerald-400 font-medium">TigerGraph Savanna GSQL</span>
           </span>
         </div>
-        <div className="font-mono text-[10px] text-muted flex items-center gap-2">
+        <div className="font-sans text-[11px] text-[#8894a0] flex items-center gap-2 px-1">
           <span>{visibleNodes.length} Vertices rendered</span>
           <span>•</span>
           <span>{visibleEdges.length} Graph Relationships</span>
           <span>•</span>
-          <span className="text-blue">Multi-Hop Traversal</span>
+          <span className="text-blue font-medium">Multi-Hop Traversal</span>
         </div>
       </div>
 
       {/* Top Right: Graph Controls Toolbar */}
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-[#0f141c]/90 backdrop-blur-md p-1.5 rounded-lg border border-white/10 shadow-lg">
+      <div className="absolute top-4 right-4 z-20 flex items-center gap-1 bg-[#0a0e13]/90 backdrop-blur-md p-1.5 rounded-xl border border-white/[.08] shadow-xl">
         <button
           onClick={zoomIn}
           title="Zoom In"
-          className="p-1.5 rounded hover:bg-white/10 text-muted hover:text-white transition-colors"
+          className="p-1.5 rounded-lg hover:bg-white/[.08] text-[#8894a0] hover:text-white transition-colors"
         >
-          <ZoomIn size={15} />
+          <ZoomIn size={16} />
         </button>
         <button
           onClick={zoomOut}
           title="Zoom Out"
-          className="p-1.5 rounded hover:bg-white/10 text-muted hover:text-white transition-colors"
+          className="p-1.5 rounded-lg hover:bg-white/[.08] text-[#8894a0] hover:text-white transition-colors"
         >
-          <ZoomOut size={15} />
+          <ZoomOut size={16} />
         </button>
-        <div className="w-[1px] h-4 bg-white/10 my-auto" />
+        <div className="w-[1px] h-4 bg-white/10 my-auto mx-0.5" />
         <button
           onClick={resetView}
           title="Reset Camera & Center"
-          className="p-1.5 rounded hover:bg-white/10 text-muted hover:text-white transition-colors"
+          className="p-1.5 rounded-lg hover:bg-white/[.08] text-[#8894a0] hover:text-white transition-colors"
         >
-          <RotateCcw size={15} />
+          <RotateCcw size={16} />
         </button>
         <button
           onClick={() => setIsFullscreen((v) => !v)}
           title={isFullscreen ? "Exit Fullscreen (Esc)" : "Fullscreen Graph"}
-          className="p-1.5 rounded hover:bg-white/10 text-muted hover:text-orange transition-colors"
+          className="p-1.5 rounded-lg hover:bg-white/[.08] text-[#8894a0] hover:text-orange transition-colors"
         >
-          {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+          {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
         </button>
         <button
           onClick={computeInitialLayout}
           title="Re-run Force-Atlas Layout"
-          className="p-1.5 rounded hover:bg-white/10 text-muted hover:text-orange transition-colors"
+          className="p-1.5 rounded-lg hover:bg-white/[.08] text-[#8894a0] hover:text-orange transition-colors"
         >
-          <RefreshCw size={15} />
+          <RefreshCw size={16} />
         </button>
       </div>
 
@@ -512,7 +533,7 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
           })}
 
           {/* ============================================================== */}
-          {/* 2. VERTEX NODES (TigerGraph Savanna Aesthetic)                 */}
+          {/* 2. VERTEX NODES (TigerGraph Savanna Aesthetic - Symmetric)     */}
           {/* ============================================================== */}
           {visibleNodes.map((n) => {
             const pos = positions[n.id];
@@ -524,7 +545,11 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
             const isFlagged = Boolean(n.flagged);
 
             const isDimmed = connectedNodeIds && !connectedNodeIds.has(n.id);
-            const radius = isFlagged ? 36 : n.type === "customer" || n.type === "case" ? 32 : 28;
+            // Symmetrical uniform radii: 40px for trigger transaction, 34px for regular nodes
+            const radius = isFlagged ? 40 : 34;
+
+            const rawLabel = n.label || n.id || "";
+            const displayLabel = rawLabel.length > 8 ? rawLabel.slice(0, 7) + "…" : rawLabel;
 
             return (
               <g
@@ -535,21 +560,24 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
                 onMouseEnter={() => setHoveredNodeId(n.id)}
                 onMouseLeave={() => setHoveredNodeId(null)}
               >
+                {/* Native Browser Tooltip with full untruncated info */}
+                <title>{`${theme.label}: ${rawLabel}${n.risk ? ` • ${n.risk.toUpperCase()} Risk` : ""}`}</title>
+
                 {/* Flagged Pulsating Neon Ring */}
                 {isFlagged && (
                   <>
                     <circle
                       r={radius + 12}
                       fill="none"
-                      stroke="#f59e0b"
+                      stroke="#ec6408"
                       strokeWidth="2"
-                      opacity="0.5"
+                      opacity="0.4"
                       className="animate-ping"
                     />
                     <circle
-                      r={radius + 7}
+                      r={radius + 6}
                       fill="none"
-                      stroke="#f59e0b"
+                      stroke="#ec6408"
                       strokeWidth="2"
                       strokeDasharray="4 2"
                       opacity="0.8"
@@ -569,7 +597,7 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
                   />
                 )}
 
-                {/* Main Node Body (Solid Vibrant Circle with Border) */}
+                {/* Main Node Body (Solid Vibrant Symmetrical Circle with Border) */}
                 <circle
                   r={radius}
                   fill={theme.fill}
@@ -581,52 +609,39 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
                 {/* Vertex Type Header Text inside Node */}
                 <text
                   textAnchor="middle"
-                  dy={-radius + 18}
-                  fill="#ffffff"
-                  fontSize="8.5"
-                  fontFamily="JetBrains Mono, monospace"
+                  y={-10}
+                  fill="rgba(255, 255, 255, 0.85)"
+                  fontSize="8"
+                  fontFamily="var(--sans), Plus Jakarta Sans, system-ui, sans-serif"
                   fontWeight="700"
                   letterSpacing="0.08em"
-                  opacity="0.9"
                 >
-                  {theme.label.toUpperCase()}
+                  {(theme.shortLabel || theme.label).toUpperCase()}
                 </text>
 
                 {/* Main Value / ID Label inside Node */}
                 <text
                   textAnchor="middle"
-                  dy={6}
+                  y={7}
+                  dominantBaseline="central"
                   fill="#ffffff"
-                  fontSize={isFlagged ? "11.5" : "10"}
-                  fontFamily="JetBrains Mono, monospace"
+                  fontSize={isFlagged ? "12" : "11"}
+                  fontFamily="var(--sans), Plus Jakarta Sans, system-ui, sans-serif"
                   fontWeight="800"
                 >
-                  {n.label}
+                  {displayLabel}
                 </text>
 
-                {/* Risk or Status Tag below label if present */}
+                {/* Sleek Risk Pip at bottom if present */}
                 {n.risk && (
-                  <g transform={`translate(0, ${radius - 12})`}>
-                    <rect
-                      x="-18"
-                      y="-6"
-                      width="36"
-                      height="12"
-                      rx="6"
-                      fill="#000000"
-                      fillOpacity="0.45"
-                    />
-                    <text
-                      textAnchor="middle"
-                      dy="3"
-                      fill="#ffffff"
-                      fontSize="7"
-                      fontFamily="JetBrains Mono, monospace"
-                      fontWeight="700"
-                    >
-                      {n.risk.toUpperCase()}
-                    </text>
-                  </g>
+                  <circle
+                    cx="0"
+                    cy={radius - 9}
+                    r="3.5"
+                    fill={n.risk === "high" ? "#ff4b42" : n.risk === "medium" ? "#feba12" : "#3bd29d"}
+                    stroke="#070a0f"
+                    strokeWidth="1.5"
+                  />
                 )}
               </g>
             );
@@ -637,9 +652,9 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
       {/* ============================================================== */}
       {/* 3. BOTTOM FILTER LEGEND (TigerGraph Vertex Categories)          */}
       {/* ============================================================== */}
-      <div className="absolute bottom-4 left-4 z-20 flex flex-wrap items-center gap-2 bg-[#0b0f17]/90 backdrop-blur-md px-3 py-2 rounded-lg border border-white/10 shadow-xl">
-        <span className="font-mono text-[10px] text-dim mr-1 flex items-center gap-1">
-          <Layers size={12} />
+      <div className="absolute bottom-4 left-4 z-20 flex flex-wrap items-center gap-2 bg-[#0a0e13]/90 backdrop-blur-md px-3 py-2 rounded-xl border border-white/[.08] shadow-xl">
+        <span className="font-sans text-[11px] font-semibold text-[#8894a0] mr-1 flex items-center gap-1.5">
+          <Layers size={13} className="text-orange" />
           Filter:
         </span>
         {(Object.keys(TIGERGRAPH_THEME) as Array<keyof typeof TIGERGRAPH_THEME>).map((type) => {
@@ -652,9 +667,9 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
             <button
               key={type}
               onClick={() => toggleTypeVisibility(type)}
-              className={`flex items-center gap-1.5 font-mono text-[10px] px-2 py-1 rounded transition-all border ${
+              className={`flex items-center gap-1.5 font-sans text-xs font-semibold px-2.5 py-1 rounded-lg transition-all border ${
                 isHidden
-                  ? "bg-white/[.02] text-dim border-white/5 opacity-50 line-through"
+                  ? "bg-white/[.02] text-[#56616c] border-white/5 opacity-50 line-through"
                   : `${cfg.badge} hover:brightness-125 shadow-sm`
               }`}
             >
@@ -671,8 +686,8 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
 
       {/* Hint text at bottom right */}
       <div className="absolute bottom-4 right-4 z-20 pointer-events-none hidden sm:block">
-        <span className="font-mono text-[9px] text-dim bg-black/40 px-2 py-1 rounded border border-white/5">
-          Drag nodes to reposition • Scroll to zoom • Click to inspect
+        <span className="font-sans text-[11px] text-[#8894a0] bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/5">
+          Drag nodes • Scroll to zoom • Click to inspect
         </span>
       </div>
     </div>

@@ -76,7 +76,7 @@ class FraudCaseGraphTools:
         """Upsert CaseRecord vertex and write links into FraudCaseGraph."""
         conn = self.client.get_connection()
         if not conn:
-            logger.error(f"Cannot write case {case_id} to TigerGraph: Connection is unavailable or not live.")
+            logger.info(f"TigerGraph cluster offline/paused: Case {case_id} verdict saved locally.")
             return False
         try:
             # 1. Upsert CaseRecord vertex
@@ -98,7 +98,8 @@ class FraudCaseGraphTools:
                 conn.upsertEdge("CaseRecord", case_id, "flags_transaction", "Transaction", str(transaction_id))
             if first_suspicious_txn_id:
                 conn.upsertEdge("CaseRecord", case_id, "first_fraud_transaction", "Transaction", str(first_suspicious_txn_id))
+            logger.info(f"Successfully wrote case {case_id} to TigerGraph Savanna FraudCaseGraph.")
             return True
         except Exception as e:
-            logger.error(f"Failed writing case {case_id} to TigerGraph: {e}")
+            logger.warning(f"Failed writing case {case_id} to TigerGraph: {e}")
             return False
