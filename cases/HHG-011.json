@@ -14,16 +14,22 @@
   "connected_card_ids": [],
   "similar_cases": [
     {
-      "case_id": "CASE-8104",
-      "similarity": 0.99,
-      "outcome": "cleared",
-      "reason": "Identical fraud typology (none); Transaction scale within observed range ($50-$1000)"
+      "case_id": "CC-0031",
+      "similarity": 0.95,
+      "outcome": "confirmed_fraud",
+      "reason": "Shared customer and card"
     },
     {
-      "case_id": "CASE-6841",
-      "similarity": 0.55,
+      "case_id": "CC-0290",
+      "similarity": 0.95,
       "outcome": "confirmed_fraud",
-      "reason": "Transaction scale within observed range ($1-$500)"
+      "reason": "Shared customer and card"
+    },
+    {
+      "case_id": "CC-1056",
+      "similarity": 0.95,
+      "outcome": "confirmed_fraud",
+      "reason": "Shared customer and card"
     }
   ],
   "evidence": [
@@ -39,9 +45,9 @@
     "ESCALATE_TO_ANALYST"
   ],
   "exposure_usd": 131.3,
-  "rationale": "The trigger transaction (ID 3583368) on card C11923‑K2 exposed $131.3, the sole transaction in the episode, with no velocity or device‑link anomalies recorded; the ML ingestion score was 0.00, indicating no immediate risk signal. Policy R9 was applied because the transaction falls within the defined “low‑value, single‑occurrence” category that requires analyst review when the model score is below threshold, and the absence of a pattern or device linkage elevates the need for human judgment. Given the high uncertainty and the mixed outcomes of similar historical cases (one cleared, one confirmed), escalation to an analyst is warranted to gather additional contextual evidence (e.g., device fingerprint, geolocation, merchant category) before a definitive verdict can be reached.",
-  "written_to_graph": true,
-  "graph_case_id": "HHG-011",
+  "rationale": "Investigation yields UNCERTAIN triage due to borderline risk signals and missing identity confirmations. Observed pattern 'none' presents conflicting telemetry. Policy R9 mandates escalation: ESCALATE_TO_ANALYST.",
+  "written_to_graph": false,
+  "graph_case_id": null,
   "approval_route": "AUTOMATED",
   "sar_required": false,
   "sar_narrative": null

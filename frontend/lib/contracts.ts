@@ -68,7 +68,9 @@ export interface HealthStatusContract {
   status: "ok" | "degraded" | "down";
   frontend: "online" | "offline";
   fastapi: "online" | "offline";
-  tigergraph: "connected" | "disconnected" | "mock";
+  tigergraph: "connected" | "disconnected" | "mock" | string;
+  graph_connection_state?: string;
+  graph_mode?: string;
   agent: "ready" | "busy" | "offline";
   llm: "ready" | "rate_limited" | "offline";
   dataset: "loaded" | "pending" | "missing";

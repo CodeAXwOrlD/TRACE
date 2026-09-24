@@ -12,26 +12,7 @@
     "3476682"
   ],
   "connected_card_ids": [],
-  "similar_cases": [
-    {
-      "case_id": "CASE-6841",
-      "similarity": 0.75,
-      "outcome": "confirmed_fraud",
-      "reason": "Transaction scale within observed range ($1-$500)"
-    },
-    {
-      "case_id": "CASE-5920",
-      "similarity": 0.75,
-      "outcome": "fraud",
-      "reason": "Transaction scale within observed range ($200-$2000)"
-    },
-    {
-      "case_id": "CASE-8104",
-      "similarity": 0.55,
-      "outcome": "cleared",
-      "reason": "Transaction scale within observed range ($50-$1000)"
-    }
-  ],
+  "similar_cases": [],
   "evidence": [
     {
       "step": "model_signal",
@@ -51,9 +32,9 @@
     "CLOSE_NO_FRAUD"
   ],
   "exposure_usd": 482.12,
-  "rationale": "The transaction (ID 3476682) on card C07297‑K1 is flagged as a card‑not‑present (CNP) event, yet the ingestion‑model risk score is 0.00, indicating no algorithmic concern, and the amount, while 9.6× the customer’s average, remains within the $1‑$500 range covered by policy R1, which permits such spikes for occasional high‑value CNP purchases. Because the model score is low, velocity is normal, and no device or location anomalies are present, the evidence supports a legitimate origin, matching the outcome of similar cleared cases (e.g., CASE‑8104). Consequently, the prescribed action “CLOSE_NO_FRAUD” is appropriate, closing the case without further investigation.",
-  "written_to_graph": true,
-  "graph_case_id": "HHG-006",
+  "rationale": "Transaction validated as legitimate based on: Ingestion ML risk score is low (0.00). No adverse syndicate links or velocity anomalies detected. Policy R1 applied to close the investigation without customer friction.",
+  "written_to_graph": false,
+  "graph_case_id": null,
   "approval_route": "AUTOMATED",
   "sar_required": false,
   "sar_narrative": null

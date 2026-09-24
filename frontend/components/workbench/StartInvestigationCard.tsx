@@ -53,7 +53,7 @@ export function StartInvestigationCard() {
         <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-stretch gap-2 min-w-[320px]">
           <input
             type="text"
-            placeholder="e.g. txn-flagged"
+            placeholder="Enter a benchmark transaction ID"
             value={transactionId}
             onChange={(e) => setTransactionId(e.target.value)}
             disabled={loading}
@@ -74,24 +74,24 @@ export function StartInvestigationCard() {
         <span className="font-mono text-[10px] text-dim">Quick Intakes:</span>
         <button
           type="button"
-          onClick={() => setPreset("txn-flagged")}
+          onClick={() => setPreset("3514030")}
           className="font-mono text-[10px] bg-white/[.04] hover:bg-white/[.08] text-[#dfe4e8] px-2 py-0.5 rounded border border-white/10"
         >
-          txn-flagged (Card testing / CNP)
+          3514030 (benchmark transaction)
         </button>
         <button
           type="button"
-          onClick={() => setPreset("txn-legit-1")}
+          onClick={() => setPreset("3478782")}
           className="font-mono text-[10px] bg-white/[.04] hover:bg-white/[.08] text-[#dfe4e8] px-2 py-0.5 rounded border border-white/10"
         >
-          txn-legit-1 (Legitimate recurring)
+          3478782 (benchmark transaction)
         </button>
         <button
           type="button"
-          onClick={() => setPreset("txn-unsure-1")}
+          onClick={() => setPreset("3530164")}
           className="font-mono text-[10px] bg-white/[.04] hover:bg-white/[.08] text-[#dfe4e8] px-2 py-0.5 rounded border border-white/10"
         >
-          txn-unsure-1 (Conflicting evidence)
+          3530164 (benchmark transaction)
         </button>
       </div>
 

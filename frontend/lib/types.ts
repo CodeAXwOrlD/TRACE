@@ -62,22 +62,65 @@ export interface ClosedCase {
 
 export interface EvidenceItem {
   id: string;
-  type: "transaction" | "device" | "card" | "customer" | "historical_case" | "pattern";
+  type: "transaction" | "device" | "card" | "customer" | "historical_case" | "pattern" | string;
   severity: EvidenceSeverity;
   timestamp: string;
   description: string;
   source: string;
   confidence: number; // 0..1
   tag: EvidenceTag;
+  claim?: string;
+  finding?: string;
+  entities?: string[];
+  whyItMatters?: string;
 }
 
 export interface RiskAssessment {
-  /** Input feature, not the verdict. Rules.md #1. */
+  /** Input feature from bank's ML model, not the final verdict. */
   riskScore: number;
-  /** Model output, derived from evidence. Never equals riskScore by design in mocks. */
-  probability: number;
+  /** Investigation-derived calibrated fraud probability (0..1), if calculated. */
+  probability: number | null;
   uncertainty: Uncertainty;
-  verdict: Verdict;
+  verdict: Verdict | "PENDING";
+}
+
+export interface PolicyRuleDetail {
+  rule: string;
+  title: string;
+  condition: string;
+  action: string;
+  route: string;
+}
+
+export interface RecommendationItem {
+  action: string;
+  route: string;
+  policy: string;
+  reason: string;
+  status: string;
+}
+
+export interface UncertaintyAssessment {
+  confidence: number;
+  uncertainty: string;
+  conflicting_evidence: string[];
+  missing_evidence: string[];
+  why_needed: string;
+  evidence_request?: {
+    type: string;
+    requested_after_step: string;
+    assumed_response: string;
+    impact: string;
+  };
+}
+
+export interface TimelineStepItem {
+  step: number;
+  title: string;
+  action: string;
+  result: string;
+  timestamp: string;
+  status: string;
 }
 
 export interface PolicyDecision {
@@ -125,6 +168,9 @@ export interface SimilarCase {
   caseId: string;
   similarity: number;
   outcome: string;
+  reason?: string;
+  pattern?: string;
+  exposureUsd?: number;
 }
 
 export interface Investigation {
@@ -133,12 +179,14 @@ export interface Investigation {
   triggerTransactionId: string;
   cardId?: string;
   customerId: string;
-  status: "queued" | "running" | "complete";
-  pattern: FraudPattern | null;
+  status: string;
+  pattern: FraudPattern | string | null;
   risk: RiskAssessment;
   policy: PolicyDecision | null;
+  policyDetail?: PolicyRuleDetail;
   evidence: EvidenceItem[];
   timeline: Transaction[];
+  timelineSteps?: TimelineStepItem[];
   rationale: string;
   createdAt: string;
   firstSuspiciousTxnId?: string | null;
@@ -146,6 +194,18 @@ export interface Investigation {
   connectedCardIds?: string[];
   similarCases?: SimilarCase[];
   exposureUsd?: number;
+  riskScore?: number;
+  fraudProbability?: number | null;
+  stopReason?: string;
+  approvalRoute?: string;
+  sarRequired?: boolean;
+  sarNarrative?: string | null;
+  writtenToGraph?: boolean;
+  graphCaseId?: string;
+  initialRecommendation?: RecommendationItem;
+  updatedRecommendation?: RecommendationItem;
+  whatChanged?: string;
+  uncertaintyAssessment?: UncertaintyAssessment;
 }
 
 export interface Case {

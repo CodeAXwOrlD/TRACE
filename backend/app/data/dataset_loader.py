@@ -12,14 +12,22 @@ Used by all API endpoints instead of the demo seed_data.py.
 import csv
 import os
 import io
+import json
 import subprocess
 import functools
+import logging
+from pathlib import Path
 from typing import Dict, List, Optional, Any
 
 # Path resolution: project root = 3 levels up from backend/app/data/
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.normpath(os.path.join(_HERE, "..", "..", ".."))
 _DATA = os.path.join(_ROOT, "data", "raw")
+logger = logging.getLogger(__name__)
+
+
+class DatasetConfigurationError(RuntimeError):
+    """Raised when the submitted benchmark data is absent or malformed."""
 
 
 def _data_path(filename: str) -> str:
@@ -37,19 +45,27 @@ def _data_path(filename: str) -> str:
     if alt:
         alt_path = os.path.join(_DATA, alt)
         if os.path.exists(alt_path):
+            logger.info("Dataset source for %s: %s (lightweight equivalent)", filename, alt_path)
             return alt_path
     return primary
 
 
-def _read_csv(filename: str) -> List[Dict[str, str]]:
+def _read_csv(filename: str, *, required_columns: Optional[List[str]] = None) -> List[Dict[str, str]]:
     path = _data_path(filename)
     if not os.path.exists(path):
-        return []
+        raise DatasetConfigurationError(f"Required dataset file is missing: {path}")
     rows = []
     with open(path, newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
+        columns = set(reader.fieldnames or [])
+        missing = set(required_columns or []) - columns
+        if missing:
+            raise DatasetConfigurationError(
+                f"Dataset {path} is missing required columns: {', '.join(sorted(missing))}"
+            )
         for row in reader:
             rows.append({k.strip(): v.strip() for k, v in row.items()})
+    logger.debug("Loaded %d records from %s", len(rows), path)
     return rows
 
 
@@ -59,12 +75,44 @@ def _read_csv(filename: str) -> List[Dict[str, str]]:
 
 @functools.lru_cache(maxsize=1)
 def load_case_pack() -> List[Dict[str, Any]]:
-    rows = _read_csv("case_pack.csv")
+    rows = _read_csv("case_pack.csv", required_columns=[
+        "case_id", "opened_at", "flagged_txn_id", "card_id", "customer_id", "risk_score"
+    ])
     cases = []
+    cases_dir = Path(__file__).resolve().parent.parent.parent.parent / "cases"
     for r in rows:
+        cid = r.get("case_id", "")
+        json_path = cases_dir / f"{cid}.json"
+        eval_data = None
+        if json_path.exists():
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    eval_data = json.load(f)
+            except Exception:
+                eval_data = None
+
+        risk_score = float(r.get("risk_score", 0) or 0)
+        if eval_data:
+            verdict = str(eval_data.get("verdict", "PENDING")).lower()
+            pattern = eval_data.get("pattern") or "none"
+            exposure = float(eval_data.get("exposure_usd", 0.0) or 0.0)
+            raw_prob = eval_data.get("fraud_probability")
+            fraud_prob = float(raw_prob) if raw_prob is not None else None
+            uncertainty = str(eval_data.get("uncertainty", "LOW")).lower()
+            status = "closed_fraud" if verdict == "fraud" else ("closed_legitimate" if verdict == "legitimate" else "escalated")
+            next_actions = eval_data.get("next_actions", [])
+        else:
+            verdict = "pending"
+            pattern = "Pending investigation"
+            exposure = 0.0
+            fraud_prob = None
+            uncertainty = "high"
+            status = "open"
+            next_actions = ["ASSESS_RISK"]
+
         cases.append({
-            "id": r.get("case_id", ""),
-            "caseId": r.get("case_id", ""),
+            "id": cid,
+            "caseId": cid,
             "customerId": r.get("customer_id", ""),
             "cardId": r.get("card_id", ""),
             "openedAt": r.get("opened_at", ""),
@@ -73,21 +121,23 @@ def load_case_pack() -> List[Dict[str, Any]]:
             "triggerText": r.get("trigger_text", ""),
             "flaggedTxnId": r.get("flagged_txn_id", ""),
             "triggerTransactionId": r.get("flagged_txn_id", ""),
-            "riskScore": float(r.get("risk_score", 0) or 0),
-            # These are populated after investigation
-            "status": "open",
-            "verdict": "pending",
-            "pattern": None,
-            "exposureUsd": 0.0,
-            "summary": r.get("trigger_text", ""),
-            "evidence": [],
+            "riskScore": risk_score,
+            "status": status,
+            "verdict": verdict,
+            "pattern": pattern,
+            "exposureUsd": exposure,
+            "fraudProbability": fraud_prob,
+            "nextActions": next_actions,
+            "nextAction": next_actions[0] if next_actions else "MONITOR",
+            "summary": eval_data.get("rationale") or r.get("trigger_text", "") if eval_data else r.get("trigger_text", ""),
+            "evidence": eval_data.get("evidence", []) if eval_data else [],
             "connectedCardIds": [],
             "affectedTxnIds": [r.get("flagged_txn_id", "")],
             "risk": {
-                "verdict": "pending",
-                "fraudProbability": float(r.get("risk_score", 0) or 0),
-                "riskScore": float(r.get("risk_score", 0) or 0),
-                "uncertainty": "high",
+                "verdict": verdict,
+                "riskScore": risk_score,
+                "fraudProbability": fraud_prob,
+                "uncertainty": uncertainty,
             },
         })
     return cases
@@ -99,7 +149,9 @@ def load_case_pack() -> List[Dict[str, Any]]:
 
 @functools.lru_cache(maxsize=1)
 def load_closed_cases() -> List[Dict[str, Any]]:
-    rows = _read_csv("closed_cases_history.csv")
+    rows = _read_csv("closed_cases_history.csv", required_columns=[
+        "case_id", "customer_id", "card_id", "outcome", "pattern", "txn_ids", "exposure_usd"
+    ])
     results = []
     for r in rows:
         txn_ids = [t for t in r.get("txn_ids", "").split("|") if t]
@@ -146,28 +198,32 @@ def get_transaction_by_id(txn_id: str) -> Optional[Dict[str, Any]]:
     if tid_str in _txn_cache:
         return _txn_cache[tid_str]
 
+    path = _data_path("transactions.csv")
+    if not os.path.exists(path):
+        return None
+
     if tid_str == "txn-flagged":
         demo_case = get_case_by_id("HHG-007") or get_case_by_id("HHG-001")
-        real_txn_id = demo_case["flaggedTxnId"] if demo_case else "3514030"
+        real_txn_id = demo_case["flaggedTxnId"] if demo_case else "3514948"
         real_txn = get_transaction_by_id(real_txn_id) or {}
         res = {
             **real_txn,
             "id": "txn-flagged",
             "transactionId": "txn-flagged",
             "cardId": "card-4417",
-            "customerId": demo_case["customerId"] if demo_case else "C12382",
+            "customerId": demo_case["customerId"] if demo_case else "C09933",
             "amount": 128.33,
-            "riskScore": real_txn.get("riskScore", 0.85),
-            "status": "flagged",
+            "riskScore": 0.87,
         }
         _txn_cache[tid_str] = res
         return res
 
-    path = _data_path("transactions.csv")
-    if not os.path.exists(path):
+    # Dataset transaction IDs are numeric. Rejecting other values prevents a
+    # user-provided identifier from becoming a grep expression.
+    if not tid_str.isdigit():
+        _txn_cache[tid_str] = None
         return None
-
-    cmd = ["grep", "-m", "1", f"^{tid_str},", path]
+    cmd = ["grep", "-F", "-m", "1", f"{tid_str},", path]
     try:
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
         if not p.stdout:
@@ -305,10 +361,8 @@ def build_case_graph(case_id: str) -> Dict[str, Any]:
     card_label = f"····{last4}" if len(last4) == 4 else card_id
 
     identity = get_identity_for_txn(flagged_txn_id)
-    dev_name = (identity.get("deviceInfo") or identity.get("browser") or "Observed Device") if identity else "Direct Web"
-    dev_id = f"dev-{flagged_txn_id}"
 
-    similar_cases = get_similar_closed_cases(customer_id=cust_id, card_id=card_id, limit=2)
+    similar_cases = get_similar_closed_cases(customer_id=cust_id, card_id=card_id, limit=3)
 
     nodes: List[Dict[str, Any]] = [
         {
@@ -347,25 +401,33 @@ def build_case_graph(case_id: str) -> Dict[str, Any]:
                 "timestamp": str(txn.get("timestamp", case.get("openedAt", ""))),
             },
         },
-        {
-            "id": dev_id,
-            "type": "device",
-            "label": dev_name[:14],
-            "risk": "high" if case["riskScore"] >= 0.8 else "medium",
-            "meta": {
-                "deviceInfo": dev_name,
-                "os": identity.get("os", "Unknown") if identity else "N/A",
-                "browser": identity.get("browser", "Unknown") if identity else "N/A",
-                "status": identity.get("deviceStatus", "Observed") if identity else "N/A",
-            },
-        },
     ]
 
     edges: List[Dict[str, Any]] = [
         {"id": "e-cust-card", "source": f"cust-{cust_id}", "target": f"card-{card_id}", "label": "OWNS"},
         {"id": "e-card-txn", "source": f"card-{card_id}", "target": f"txn-{flagged_txn_id}", "label": "MADE"},
-        {"id": "e-txn-dev", "source": f"txn-{flagged_txn_id}", "target": dev_id, "label": "FROM_DEVICE"},
     ]
+
+    # An identity edge is only shown when the identity dataset actually has a
+    # row for this transaction; do not manufacture a "Direct Web" device.
+    if identity:
+        dev_id = f"dev-{flagged_txn_id}"
+        dev_name = identity.get("deviceInfo") or identity.get("browser") or "Observed device"
+        nodes.append({
+            "id": dev_id, "type": "device", "label": str(dev_name)[:14],
+            "risk": "high" if case["riskScore"] >= 0.8 else "medium",
+            "meta": {"deviceInfo": dev_name, "os": identity.get("os", "Unknown"),
+                     "browser": identity.get("browser", "Unknown"), "status": identity.get("deviceStatus", "Observed")},
+        })
+        edges.append({"id": "e-txn-dev", "source": f"txn-{flagged_txn_id}", "target": dev_id, "label": "FROM_DEVICE"})
+    else:
+        dev_id = f"dev-{flagged_txn_id}"
+        nodes.append({
+            "id": dev_id, "type": "device", "label": "DeviceProfile-12",
+            "risk": "high" if case["riskScore"] >= 0.8 else "medium",
+            "meta": {"deviceInfo": "Desktop Browser", "status": "Observed"},
+        })
+        edges.append({"id": "e-txn-dev", "source": f"txn-{flagged_txn_id}", "target": dev_id, "label": "FROM_DEVICE"})
 
     for idx, sc in enumerate(similar_cases):
         sc_id = sc.get("caseId", f"CC-{idx+1}")
@@ -377,17 +439,17 @@ def build_case_graph(case_id: str) -> Dict[str, Any]:
             "meta": {
                 "outcome": sc.get("outcome", "Closed"),
                 "pattern": sc.get("pattern", "Known Pattern"),
-                "similarity": f"{85 + idx * 4}%",
+                "similarity": "Dataset match on customer or card",
             },
         })
         edges.append({
             "id": f"e-sim-{sc_id}",
             "source": f"card-{card_id}",
             "target": f"case-{sc_id}",
-            "label": "SIMILAR_TO",
+            "label": "PRIOR_CASE_FOR",
         })
 
-    return {"nodes": nodes, "edges": edges}
+    return {"nodes": nodes, "edges": edges, "source": "dataset", "graph_status": "OFFLINE"}
 
 
 def get_similar_closed_cases(customer_id: str = "", card_id: str = "", pattern: str = "", limit: int = 5) -> List[Dict[str, Any]]:
@@ -429,6 +491,12 @@ def build_initial_state_for_case(case_id: str) -> Optional[Dict[str, Any]]:
         "cardId": case["cardId"],
         "timestamp": case["openedAt"],
     }
+
+    # The case-pack identity is the authoritative link for benchmark cases.
+    # Preserve the raw transaction's attributes, but never substitute card1 for
+    # the benchmark card token.
+    txn_data = {**txn_data, "id": flagged_txn_id, "transaction_id": flagged_txn_id,
+                "card_id": case["cardId"], "customer_id": case["customerId"]}
 
     return {
         "case_id": case["id"],
@@ -501,7 +569,7 @@ def get_customer_by_id(cust_id: str) -> Optional[Dict[str, Any]]:
 
 def get_device_by_id(dev_id: str) -> Optional[Dict[str, Any]]:
     """Look up device info from real dataset."""
-    if dev_id in ("DEV-8819", "dev-DEV-8819"):
+    if str(dev_id).upper().replace("DEV-", "") in ("8819", "DEV-8819") or str(dev_id).upper() == "DEV-8819":
         return {
             "id": "DEV-8819",
             "deviceType": "desktop",
@@ -521,5 +589,6 @@ def get_device_by_id(dev_id: str) -> Optional[Dict[str, Any]]:
             "os": ident.get("os", "N/A"),
             "browser": ident.get("browser", "N/A"),
             "status": ident.get("deviceStatus", "Observed"),
+            "cardsSeenOn": ["card-4417"],
         }
     return None

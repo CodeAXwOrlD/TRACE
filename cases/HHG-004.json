@@ -14,16 +14,22 @@
   "connected_card_ids": [],
   "similar_cases": [
     {
-      "case_id": "CASE-8104",
-      "similarity": 0.99,
+      "case_id": "CC-0696",
+      "similarity": 0.95,
       "outcome": "cleared",
-      "reason": "Identical fraud typology (none); Transaction scale within observed range ($50-$1000)"
+      "reason": "Shared customer and card"
     },
     {
-      "case_id": "CASE-6841",
-      "similarity": 0.55,
+      "case_id": "CC-1736",
+      "similarity": 0.95,
       "outcome": "confirmed_fraud",
-      "reason": "Transaction scale within observed range ($1-$500)"
+      "reason": "Shared customer and card"
+    },
+    {
+      "case_id": "CC-2121",
+      "similarity": 0.95,
+      "outcome": "confirmed_fraud",
+      "reason": "Shared customer and card"
     }
   ],
   "evidence": [
@@ -39,9 +45,9 @@
     "ESCALATE_TO_ANALYST"
   ],
   "exposure_usd": 128.33,
-  "rationale": "Case HHG‑004 involves a single $128.33 purchase on card C08106‑K1 (transaction 3583227), the first flagged activity in the account, yet the ingestion model returned a risk score of 0.00, indicating no obvious pattern.  Policy R9 was applied because it governs low‑value, single‑transaction alerts that lack a clear fraud pattern but still trigger when uncertainty is high; the model’s low score does not negate the need for human review under this rule.  The prescribed action to ESCALATE_TO_ANALYST is warranted because the fraud probability is only 4 % yet the uncertainty is marked HIGH and no corroborating device or velocity evidence is available to confirm or dismiss the suspicion.  The missing evidence—device fingerprint, transaction velocity, and a broader historical pattern—creates a conflict between the low model score and the policy trigger, leaving the verdict uncertain and necessitating analyst adjudication.",
-  "written_to_graph": true,
-  "graph_case_id": "HHG-004",
+  "rationale": "Investigation yields UNCERTAIN triage due to borderline risk signals and missing identity confirmations. Observed pattern 'none' presents conflicting telemetry. Policy R9 mandates escalation: ESCALATE_TO_ANALYST.",
+  "written_to_graph": false,
+  "graph_case_id": null,
   "approval_route": "AUTOMATED",
   "sar_required": false,
   "sar_narrative": null

@@ -7,6 +7,7 @@ via TigerGraph MCP server and pyTigerGraph.
 import os
 import json
 import logging
+import requests
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -34,9 +35,20 @@ class TigerGraphMCPToolClient:
             return self._conn
         if os.environ.get("BACKEND_MOCK_MODE", "true").lower() == "true":
             return None
-        if not self.token and not self.password:
+        configured = any(value and "your_" not in value.lower() and "your-" not in value.lower()
+                         for value in (self.token, self.password))
+        if not self.host or "your_" in self.host.lower() or "your-" in self.host.lower() or not configured:
             return None
         try:
+            # Avoid pyTigerGraph.ping(), which has no exposed timeout and can
+            # block the investigation when a Savanna cluster is paused.
+            response = requests.get(
+                f"{self.host.rstrip('/')}/restpp/echo",
+                headers={"Authorization": f"Bearer {self.token}"} if self.token else {},
+                timeout=(1.0, 3.0),
+            )
+            if response.status_code != 200:
+                return None
             import pyTigerGraph as tg
             conn = tg.TigerGraphConnection(
                 host=self.host,
@@ -45,9 +57,6 @@ class TigerGraphMCPToolClient:
                 password=self.password,
                 apiToken=self.token if self.token else None,
             )
-            # Verify cluster is live and reachable
-            if not conn.ping():
-                return None
             self._conn = conn
             return self._conn
         except Exception as e:

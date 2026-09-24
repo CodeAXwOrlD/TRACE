@@ -14,22 +14,22 @@
   "connected_card_ids": [],
   "similar_cases": [
     {
-      "case_id": "CASE-6841",
-      "similarity": 0.75,
+      "case_id": "CC-2400",
+      "similarity": 0.95,
       "outcome": "confirmed_fraud",
-      "reason": "Transaction scale within observed range ($1-$500)"
+      "reason": "Shared customer and card"
     },
     {
-      "case_id": "CASE-8104",
-      "similarity": 0.55,
-      "outcome": "cleared",
-      "reason": "Transaction scale within observed range ($50-$1000)"
+      "case_id": "CC-2717",
+      "similarity": 0.95,
+      "outcome": "confirmed_fraud",
+      "reason": "Shared customer and card"
     },
     {
-      "case_id": "CASE-5920",
-      "similarity": 0.5,
-      "outcome": "fraud",
-      "reason": "Impossible travel speed cross-border transaction burst without prior travel notice."
+      "case_id": "CC-2857",
+      "similarity": 0.95,
+      "outcome": "confirmed_fraud",
+      "reason": "Shared customer and card"
     }
   ],
   "evidence": [
@@ -45,9 +45,9 @@
     "ESCALATE_TO_ANALYST"
   ],
   "exposure_usd": 100.07,
-  "rationale": "Case HHG‑005 involves a single card‑not‑present transaction (ID 3523199) on card C02923‑K1 for $100.07, flagged as the first suspicious activity. The ML model assigned a 0.54 risk score (moderate anomaly) and the deterministic engine returned a 37 % fraud probability with high uncertainty, matching policy R9 which governs moderate‑risk CNP transactions. Given the similarity to CASE‑6841 (75 % similarity, confirmed fraud) and the absence of corroborating device or velocity evidence, the verdict remains uncertain; therefore the case should be escalated to a senior analyst for manual review.",
-  "written_to_graph": true,
-  "graph_case_id": "HHG-005",
+  "rationale": "Investigation yields UNCERTAIN triage due to borderline risk signals and missing identity confirmations. Observed pattern 'cnp' presents conflicting telemetry. Policy R9 mandates escalation: ESCALATE_TO_ANALYST.",
+  "written_to_graph": false,
+  "graph_case_id": null,
   "approval_route": "AUTOMATED",
   "sar_required": false,
   "sar_narrative": null

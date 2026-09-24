@@ -1,9 +1,31 @@
 """Automated integration tests for TRACE Backend API."""
 
-from fastapi.testclient import TestClient
+import asyncio
+import httpx
 from app.main import app
 
-client = TestClient(app)
+
+class ASGIClient:
+    """Small synchronous facade over httpx's async ASGI transport.
+
+    This avoids the blocking TestClient incompatibility in the submission's
+    FastAPI/Starlette/httpx dependency combination.
+    """
+    def request(self, method, url, **kwargs):
+        async def send():
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as http:
+                return await http.request(method, url, **kwargs)
+        return asyncio.run(send())
+
+    def get(self, url, **kwargs):
+        return self.request("GET", url, **kwargs)
+
+    def post(self, url, **kwargs):
+        return self.request("POST", url, **kwargs)
+
+
+client = ASGIClient()
 
 
 def test_health():
@@ -18,7 +40,7 @@ def test_health():
 
 
 def test_investigate():
-    response = client.post("/api/investigate", json={"transaction_id": "txn-flagged"})
+    response = client.post("/api/investigate", json={"transaction_id": "3514948"})
     assert response.status_code == 200
     data = response.json()
     assert data["verdict"] in ("FRAUD", "LEGITIMATE", "UNCERTAIN")
@@ -86,19 +108,19 @@ def test_close_case():
 
 def test_entities_and_stats():
     # Transaction
-    res = client.get("/api/transactions/txn-flagged")
+    res = client.get("/api/transactions/3514948")
     assert res.status_code == 200
-    assert res.json()["id"] == "txn-flagged"
+    assert res.json()["id"] == "3514948"
 
     # Customer
-    res = client.get("/api/customers/C12382")
+    res = client.get("/api/customers/C09933")
     assert res.status_code == 200
-    assert res.json()["id"] == "C12382"
+    assert res.json()["id"] == "C09933"
 
     # Device
-    res = client.get("/api/devices/DEV-8819")
+    res = client.get("/api/devices/dev-3583227")
     assert res.status_code == 200
-    assert res.json()["id"] == "DEV-8819"
+    assert res.json()["id"] == "dev-3583227"
 
     # Dashboard Stats
     res = client.get("/api/dashboard/stats")

@@ -32,7 +32,7 @@
 
 - **Agentic Investigation Workflow:** 12-stage LangGraph pipeline that extracts deterministic evidence, assesses risk, computes uncertainty, and selects rule-based policy actions.
 - **TigerGraph Deep Graph Traversal:** Analyzes multi-hop entity connections (shared devices, linked cards, IP clusters, and fraud syndicates).
-- **TigerGraph MCP Server Integration:** Compatible with official `tigergraph-mcp` for agent-tool graph interactions.
+- **TigerGraph integration:** Direct `pyTigerGraph`/REST access is used for graph reads and verified case writeback. The repository does not invoke an MCP transport at runtime; do not describe a deployment as MCP-powered until one is configured and exercised.
 - **GraphRAG & Historical Case Memory:** Fast indexed retrieval across 5,500+ resolved fraud cases from `closed_cases_history.csv` to inform current recommendations.
 - **Uncertainty & Next-Best Action (NBA):** Distinguishes between `FRAUD`, `LEGITIMATE`, and `UNCERTAIN` cases, requesting additional evidence (e.g., Step-Up Auth, 3DS, Analyst Review) before recommending terminal actions.
 - **Real-time SSE Investigation Stream:** Live telemetry and node-by-node investigation progression streamed straight to the UI.
@@ -57,7 +57,7 @@
                  ┌───────────────────────┴───────────────────────┐
                  ▼                                               ▼
    ┌───────────────────────────┐                   ┌───────────────────────────┐
-   │ LangGraph Agent Engine    │                   │   TigerGraph MCP Server   │
+   │ LangGraph Agent Engine    │                   │ TigerGraph REST / pyTigerGraph│
    │ (Deterministic Evidence,  │◄─────────────────►│  (GSQL Queries, Neighbors,│
    │  Policy, History Memory)  │   MCP Protocol    │   Graph Topology)         │
    └─────────────┬─────────────┘                   └─────────────┬─────────────┘
@@ -204,7 +204,7 @@ cd ..
 
 ---
 
-## 🐯 TigerGraph Savanna & MCP Configuration
+## 🐯 TigerGraph Savanna Configuration
 
 ### Option A: Managed Cloud (Recommended)
 1. Go to [savanna.tgcloud.io](https://savanna.tgcloud.io/) and create a free account.
@@ -213,8 +213,10 @@ cd ..
 4. Generate a secret/token from Admin Portal or GraphStudio.
 5. Provide the URL, Graph Name, and Secret in `backend/.env`.
 
-### Running TigerGraph MCP Server
-TRACE integrates with the official `tigergraph-mcp` standard:
+### Optional MCP Server
+An MCP server may be run alongside TRACE for future tool integration, but the
+current runtime uses direct authenticated TigerGraph API calls and does not
+invoke MCP tools:
 ```bash
 tigergraph-mcp --transport stdio
 # OR Streamable HTTP for multi-user:

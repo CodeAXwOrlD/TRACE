@@ -23,7 +23,7 @@ import type {
 } from "./types";
 
 /** Maps backend PRD Evidence item to frontend view-model */
-export function contractToEvidenceItem(item: EvidenceContractItem, index = 0): EvidenceItem {
+export function contractToEvidenceItem(item: any, index = 0): EvidenceItem {
   const severity: EvidenceSeverity =
     item.direction === "concern" ? "high" : item.direction === "ease" ? "low" : "medium";
   const tag: EvidenceTag =
@@ -33,15 +33,21 @@ export function contractToEvidenceItem(item: EvidenceContractItem, index = 0): E
       ? "lowers_concern"
       : "context";
 
+  const claimText = item.claim || item.finding || item.description || "";
+
   return {
-    id: `ev-${index}-${item.step}`,
+    id: item.id || `ev-${index}-${item.step || "signal"}`,
     type: (item.step as EvidenceItem["type"]) || "pattern",
     severity,
-    timestamp: new Date().toISOString(),
-    description: item.finding,
-    source: item.step.replace(/_/g, " ").toUpperCase(),
-    confidence: Math.min(Math.max(item.weight, 0.1), 0.99),
+    timestamp: item.timestamp || new Date().toISOString(),
+    description: claimText,
+    claim: claimText,
+    finding: claimText,
+    source: item.source || (item.step ? item.step.replace(/_/g, " ").toUpperCase() : "EVIDENCE"),
+    confidence: typeof item.weight === "number" ? Math.min(Math.max(item.weight, 0.05), 0.99) : 0.75,
     tag,
+    entities: item.entities || [],
+    whyItMatters: item.why_it_matters || item.whyItMatters,
   };
 }
 
@@ -66,9 +72,7 @@ export function evidenceItemToContract(item: EvidenceItem): EvidenceContractItem
  *  Handles both snake_case (agent output) and camelCase (dataset_loader stubs),
  *  and real HHG-xxx case IDs alongside demo CASE-000x IDs.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function contractToInvestigationViewModel(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   contract: any,
   extra: {
     customerId?: string;
@@ -76,9 +80,11 @@ export function contractToInvestigationViewModel(
     createdAt?: string;
   } = {}
 ): Investigation {
-  // Support both snake_case (agent output) and camelCase (quick stubs from dataset_loader)
-  const fraudProbability: number =
-    contract.fraud_probability ?? contract.fraudProbability ?? 0;
+  // Distinguish risk score (input) vs calibrated fraud probability (output)
+  const rawProbability = contract.fraud_probability ?? contract.fraudProbability;
+  const fraudProbability: number | null =
+    rawProbability !== undefined && rawProbability !== null ? Number(rawProbability) : null;
+
   const caseId: string = contract.case_id ?? contract.caseId ?? "";
   const cardId: string = contract.card_id ?? contract.cardId ?? "";
   const customerId: string =
@@ -92,13 +98,14 @@ export function contractToInvestigationViewModel(
     contract.flaggedTxnId ??
     "";
   const rawRisk = contract.risk ?? {};
+  const inputRiskScore: number = contract.risk_score ?? contract.riskScore ?? rawRisk.riskScore ?? 0.0;
   const verdictRaw: string =
     contract.verdict ?? rawRisk.verdict ?? "uncertain";
   const uncertainty: string =
     contract.uncertainty ?? rawRisk.uncertainty ?? "high";
 
   const risk: RiskAssessment = {
-    riskScore: fraudProbability,
+    riskScore: inputRiskScore,
     probability: fraudProbability,
     uncertainty: uncertainty as Uncertainty,
     verdict: verdictRaw as Verdict,
@@ -106,11 +113,11 @@ export function contractToInvestigationViewModel(
 
   const policy: PolicyDecision = {
     policyId: contract.policy ?? "",
-    actions: contract.next_actions ?? [],
+    actions: contract.next_actions ?? contract.nextActions ?? [],
   };
 
   const evidence: EvidenceItem[] = (contract.evidence ?? []).map(
-    (e: EvidenceContractItem, i: number) => contractToEvidenceItem(e, i)
+    (e: any, i: number) => contractToEvidenceItem(e, i)
   );
 
   // ID conversion: HHG-001 → inv-hhg-001, CASE-0007 → inv-0007
@@ -128,9 +135,13 @@ export function contractToInvestigationViewModel(
     status: contract.status ?? "open",
     pattern: (contract.pattern === "none" ? null : contract.pattern) as FraudPattern | null,
     risk,
+    riskScore: inputRiskScore,
+    fraudProbability,
     policy,
+    policyDetail: contract.policy_detail ?? contract.policyDetail,
     evidence,
     timeline: extra.timeline ?? contract.timeline ?? [],
+    timelineSteps: contract.timeline_steps ?? contract.timelineSteps ?? [],
     rationale: contract.rationale ?? contract.summary ?? "",
     createdAt:
       extra.createdAt ??
@@ -150,14 +161,27 @@ export function contractToInvestigationViewModel(
       contract.connected_card_ids ??
       contract.connectedCardIds ??
       [],
-    similarCases: (contract.similar_cases ?? []).map(
-      (sc: { case_id: string; similarity: number; outcome: string }) => ({
-        caseId: sc.case_id,
+    similarCases: (contract.similar_cases ?? contract.similarCases ?? []).map(
+      (sc: any) => ({
+        caseId: sc.case_id ?? sc.caseId,
         similarity: sc.similarity,
         outcome: sc.outcome,
+        reason: sc.reason,
+        pattern: sc.pattern,
+        exposureUsd: sc.exposure_usd ?? sc.exposureUsd,
       })
     ),
     exposureUsd: contract.exposure_usd ?? contract.exposureUsd ?? 0,
+    stopReason: contract.stop_reason ?? contract.stopReason,
+    approvalRoute: contract.approval_route ?? contract.approvalRoute ?? "AUTOMATED",
+    sarRequired: contract.sar_required ?? contract.sarRequired ?? false,
+    sarNarrative: contract.sar_narrative ?? contract.sarNarrative ?? null,
+    writtenToGraph: contract.written_to_graph ?? contract.writtenToGraph ?? true,
+    graphCaseId: contract.graph_case_id ?? contract.graphCaseId ?? caseId,
+    initialRecommendation: contract.initial_recommendation ?? contract.initialRecommendation,
+    updatedRecommendation: contract.updated_recommendation ?? contract.updatedRecommendation,
+    whatChanged: contract.what_changed ?? contract.whatChanged,
+    uncertaintyAssessment: contract.uncertainty_assessment ?? contract.uncertaintyAssessment,
   };
 }
 

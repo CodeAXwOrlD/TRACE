@@ -1,5 +1,4 @@
 import os
-import json
 import logging
 import polars as pl
 from typing import Dict, Any, List, Optional
@@ -9,8 +8,9 @@ logger = logging.getLogger(__name__)
 class HistoricalCaseMemory:
     """Indexed memory for closed fraud cases."""
 
-    def __init__(self, history_csv_path: str = "data/raw/closed_cases_history.csv"):
-        self.csv_path = history_csv_path
+    def __init__(self, history_csv_path: Optional[str] = None):
+        root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        self.csv_path = history_csv_path or os.path.join(root, "data", "raw", "closed_cases_history.csv")
         self._cases_df = None
         self._load()
 
@@ -40,4 +40,4 @@ class HistoricalCaseMemory:
             if len(matched) > 0:
                 return matched.head(limit).to_dicts()
 
-        return df.head(limit).to_dicts()
+        return []

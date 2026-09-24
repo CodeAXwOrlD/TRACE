@@ -14,22 +14,22 @@
   "connected_card_ids": [],
   "similar_cases": [
     {
-      "case_id": "CASE-6841",
-      "similarity": 0.75,
+      "case_id": "CC-2011",
+      "similarity": 0.95,
       "outcome": "confirmed_fraud",
-      "reason": "Transaction scale within observed range ($1-$500)"
+      "reason": "Shared customer and card"
     },
     {
-      "case_id": "CASE-8104",
-      "similarity": 0.55,
+      "case_id": "CC-2087",
+      "similarity": 0.95,
       "outcome": "cleared",
-      "reason": "Transaction scale within observed range ($50-$1000)"
+      "reason": "Shared customer and card"
     },
     {
-      "case_id": "CASE-5920",
-      "similarity": 0.5,
-      "outcome": "fraud",
-      "reason": "Impossible travel speed cross-border transaction burst without prior travel notice."
+      "case_id": "CC-2860",
+      "similarity": 0.95,
+      "outcome": "confirmed_fraud",
+      "reason": "Shared customer and card"
     }
   ],
   "evidence": [
@@ -45,9 +45,9 @@
     "ESCALATE_TO_ANALYST"
   ],
   "exposure_usd": 99.92,
-  "rationale": "Case HHG‑019 involves a single $99.92 card‑not‑present transaction (ID 3503878) on card C07987‑K2, for which the ML model returned a 0.90 anomaly score and the deterministic engine assigns a 0.61 fraud probability, flagging it under policy R9 for high‑risk CNP activity. Policy R9 applies to CNP transactions that lack device or velocity confirmation, and the elevated anomaly score combined with the 61 % probability warrants escalation to a human analyst for further investigation. The verdict remains uncertain because only one transaction is available, with no device linkage, velocity data, or geolocation context; additional evidence such as device fingerprinting or transaction pattern analysis is needed to resolve the ambiguity.",
-  "written_to_graph": true,
-  "graph_case_id": "HHG-019",
+  "rationale": "Investigation yields UNCERTAIN triage due to borderline risk signals and missing identity confirmations. Observed pattern 'cnp' presents conflicting telemetry. Policy R9 mandates escalation: ESCALATE_TO_ANALYST.",
+  "written_to_graph": false,
+  "graph_case_id": null,
   "approval_route": "AUTOMATED",
   "sar_required": false,
   "sar_narrative": null

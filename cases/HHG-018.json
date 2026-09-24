@@ -14,16 +14,22 @@
   "connected_card_ids": [],
   "similar_cases": [
     {
-      "case_id": "CASE-8104",
-      "similarity": 0.75,
-      "outcome": "cleared",
-      "reason": "Identical fraud typology (none)"
+      "case_id": "CC-0255",
+      "similarity": 0.95,
+      "outcome": "confirmed_fraud",
+      "reason": "Shared customer and card"
     },
     {
-      "case_id": "CASE-6841",
-      "similarity": 0.55,
+      "case_id": "CC-0405",
+      "similarity": 0.95,
+      "outcome": "cleared",
+      "reason": "Shared customer and card"
+    },
+    {
+      "case_id": "CC-0454",
+      "similarity": 0.95,
       "outcome": "confirmed_fraud",
-      "reason": "Transaction scale within observed range ($1-$500)"
+      "reason": "Shared customer and card"
     }
   ],
   "evidence": [
@@ -39,9 +45,9 @@
     "ESCALATE_TO_ANALYST"
   ],
   "exposure_usd": 39.08,
-  "rationale": "Case HHG‑018 involves a single $39.08 purchase on card C02354‑K2 (Trigger Tx 3491361) that was flagged as the first suspicious transaction, with no additional velocity or device‑link evidence to support a pattern. Policy R9 was applied because it governs low‑value, single‑transaction anomalies that lack corroborating activity, and the transaction’s characteristics match the policy’s threshold criteria. The prescribed action to ESCALATE_TO_ANALYST is warranted by the high uncertainty and the discrepancy between the low ML risk score (0.00) and the policy match, indicating that automated signals alone are insufficient to rule out fraud. Missing evidence—such as device fingerprinting, transaction velocity, or historical linkage—prevents a definitive verdict, so human review is required to resolve the uncertainty.",
-  "written_to_graph": true,
-  "graph_case_id": "HHG-018",
+  "rationale": "Investigation yields UNCERTAIN triage due to borderline risk signals and missing identity confirmations. Observed pattern 'none' presents conflicting telemetry. Policy R9 mandates escalation: ESCALATE_TO_ANALYST.",
+  "written_to_graph": false,
+  "graph_case_id": null,
   "approval_route": "AUTOMATED",
   "sar_required": false,
   "sar_narrative": null

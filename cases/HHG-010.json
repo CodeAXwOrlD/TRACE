@@ -14,22 +14,10 @@
   "connected_card_ids": [],
   "similar_cases": [
     {
-      "case_id": "CASE-5920",
-      "similarity": 0.75,
-      "outcome": "fraud",
-      "reason": "Transaction scale within observed range ($200-$2000)"
-    },
-    {
-      "case_id": "CASE-6841",
-      "similarity": 0.5,
-      "outcome": "confirmed_fraud",
-      "reason": "Scripted micro-authorization attacks followed by rapid high-velocity cashouts."
-    },
-    {
-      "case_id": "CASE-7012",
-      "similarity": 0.45,
-      "outcome": "confirmed_fraud",
-      "reason": "Transaction scale within observed range ($500-$5000)"
+      "case_id": "CC-0873",
+      "similarity": 0.95,
+      "outcome": "cleared",
+      "reason": "Shared customer and card"
     }
   ],
   "evidence": [
@@ -52,9 +40,9 @@
     "MONITOR"
   ],
   "exposure_usd": 1000.03,
-  "rationale": "The first suspicious transaction (ID 3506725) on card C10434‑K1 shows a $1,000.03 spend—20× the customer’s historical average—while the ML model flagged a 0.90 anomaly score, confirming a high‑risk pattern (cnp). These signals match policy R3, which targets card‑not‑present fraud with unusually large, single‑transaction spikes, and the evidence aligns with similar confirmed fraud cases (CASE‑5920, CASE‑7012). Consequently, the investigation warrants a REQUEST_STEP_UP_AUTH to verify cardholder identity and a MONITOR action to track any subsequent activity.",
-  "written_to_graph": true,
-  "graph_case_id": "HHG-010",
+  "rationale": "Investigation confirms fraud classification based on: Ingestion ML risk score flagged elevated anomaly (0.90); Transaction amount ($1000.03) exceeds customer historical average ($50.00) by 20.0x. The initial suspicious activity originated at transaction 3506725, yielding cumulative exposure of $1,000.03. Policy R3 matched, initiating prescribed protocol: REQUEST_STEP_UP_AUTH, MONITOR.",
+  "written_to_graph": false,
+  "graph_case_id": null,
   "approval_route": "AUTOMATED",
   "sar_required": false,
   "sar_narrative": null

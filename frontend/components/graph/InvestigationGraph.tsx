@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import Graph from "graphology";
 import circular from "graphology-layout/circular";
 import forceAtlas2 from "graphology-layout-forceatlas2";
-import { ZoomIn, ZoomOut, Maximize2, Minimize2, RotateCcw, ShieldAlert, CreditCard, User, Smartphone, FileText, Layers, RefreshCw } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize2, Minimize2, RotateCcw, ShieldAlert, CreditCard, User, Smartphone, FileText, Layers, RefreshCw, Target, Compass } from "lucide-react";
 import type { GraphEdge, GraphNode, InvestigationGraphData } from "@/lib/types";
 
 // ============================================================================
@@ -68,6 +68,8 @@ export interface InvestigationGraphProps {
   data: InvestigationGraphData;
   onNodeClick?: (node: GraphNode) => void;
   visibleTypes?: Partial<Record<GraphNode["type"], boolean>>;
+  selectedNode?: GraphNode | null;
+  flaggedTxnId?: string;
 }
 
 /**
@@ -81,7 +83,13 @@ export interface InvestigationGraphProps {
  * - Click-to-inspect properties drawer
  * - 100% crash-free: zero WebGL / GPU-driver failure points
  */
-export function InvestigationGraph({ data, onNodeClick, visibleTypes }: InvestigationGraphProps) {
+export function InvestigationGraph({
+  data,
+  onNodeClick,
+  visibleTypes,
+  selectedNode,
+  flaggedTxnId,
+}: InvestigationGraphProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Canvas Viewport Transform (Pan & Zoom)
@@ -95,9 +103,37 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   // Selection & Hover States
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(selectedNode?.id || null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [hoveredEdge, setHoveredEdge] = useState<GraphEdge | null>(null);
+  const [evidencePathActive, setEvidencePathActive] = useState(false);
   const [hiddenTypes, setHiddenTypes] = useState<Record<string, boolean>>({});
+
+  // Focus investigation on flagged trigger node
+  const focusInvestigation = useCallback(() => {
+    const flagged =
+      (flaggedTxnId ? data.nodes.find((n) => n.id === flaggedTxnId) : null) ||
+      data.nodes.find((n) => n.flagged || n.type === "transaction");
+    if (flagged && positions[flagged.id]) {
+      const pos = positions[flagged.id];
+      if (!pos) return;
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      const cx = containerRect ? containerRect.width / 2 : 440;
+      const cy = containerRect ? containerRect.height / 2 : 260;
+      setTransform({
+        x: cx - pos.x * 1.25,
+        y: cy - pos.y * 1.25,
+        k: 1.25,
+      });
+      setSelectedNodeId(flagged.id);
+      if (onNodeClick) onNodeClick(flagged);
+    }
+  }, [data.nodes, positions, onNodeClick, flaggedTxnId]);
+
+  // Toggle evidence path highlighting
+  const toggleEvidencePath = () => {
+    setEvidencePathActive((prev) => !prev);
+  };
 
   // Fullscreen expand/collapse state
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -357,44 +393,71 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
       </div>
 
       {/* Top Right: Graph Controls Toolbar */}
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-1 bg-[#0a0e13]/90 backdrop-blur-md p-1.5 rounded-xl border border-white/[.08] shadow-xl">
+      <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-[#0a0e13]/90 backdrop-blur-md p-1.5 rounded-xl border border-white/[.08] shadow-xl">
+        <button
+          onClick={focusInvestigation}
+          title="Focus Investigation (Center Trigger Neighborhood)"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-orange/15 hover:bg-orange text-orange hover:text-white font-mono text-[11px] font-semibold border border-orange/40 transition-all shadow-sm"
+        >
+          <Target size={13} />
+          <span>Focus</span>
+        </button>
+        <button
+          onClick={toggleEvidencePath}
+          title="Highlight Graph Evidence Path"
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-mono text-[11px] font-semibold border transition-all ${
+            evidencePathActive
+              ? "bg-blue/25 text-blue border-blue shadow-sm"
+              : "hover:bg-white/[.08] text-[#8894a0] hover:text-white border-white/10"
+          }`}
+        >
+          <Compass size={13} />
+          <span>Evidence Path</span>
+        </button>
+        <button
+          onClick={() => {
+            resetView();
+            computeInitialLayout();
+            setEvidencePathActive(false);
+          }}
+          title="Reset Graph (Positions & Zoom)"
+          className="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-white/[.08] text-[#8894a0] hover:text-white font-mono text-[11px] border border-white/10 transition-colors"
+        >
+          <RotateCcw size={13} />
+          <span>Reset</span>
+        </button>
+        <div className="w-[1px] h-4 bg-white/10 my-auto mx-0.5" />
         <button
           onClick={zoomIn}
           title="Zoom In"
           className="p-1.5 rounded-lg hover:bg-white/[.08] text-[#8894a0] hover:text-white transition-colors"
         >
-          <ZoomIn size={16} />
+          <ZoomIn size={15} />
         </button>
         <button
           onClick={zoomOut}
           title="Zoom Out"
           className="p-1.5 rounded-lg hover:bg-white/[.08] text-[#8894a0] hover:text-white transition-colors"
         >
-          <ZoomOut size={16} />
-        </button>
-        <div className="w-[1px] h-4 bg-white/10 my-auto mx-0.5" />
-        <button
-          onClick={resetView}
-          title="Reset Camera & Center"
-          className="p-1.5 rounded-lg hover:bg-white/[.08] text-[#8894a0] hover:text-white transition-colors"
-        >
-          <RotateCcw size={16} />
+          <ZoomOut size={15} />
         </button>
         <button
           onClick={() => setIsFullscreen((v) => !v)}
           title={isFullscreen ? "Exit Fullscreen (Esc)" : "Fullscreen Graph"}
           className="p-1.5 rounded-lg hover:bg-white/[.08] text-[#8894a0] hover:text-orange transition-colors"
         >
-          {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-        </button>
-        <button
-          onClick={computeInitialLayout}
-          title="Re-run Force-Atlas Layout"
-          className="p-1.5 rounded-lg hover:bg-white/[.08] text-[#8894a0] hover:text-orange transition-colors"
-        >
-          <RefreshCw size={16} />
+          {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
         </button>
       </div>
+
+      {/* Hovered Edge Metadata Tooltip */}
+      {hoveredEdge && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-[#0b0f17]/95 px-3 py-1.5 rounded-lg border border-cyan-500/40 shadow-xl flex items-center gap-2 font-mono text-xs">
+          <span className="text-cyan-400 font-bold">{hoveredEdge.label}</span>
+          <span className="text-dim">•</span>
+          <span className="text-muted">{hoveredEdge.source} → {hoveredEdge.target}</span>
+        </div>
+      )}
 
       {/* The Master SVG Graph Canvas */}
       <svg
@@ -457,11 +520,15 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
             if (!src || !dst) return null;
 
             const isEdgeActive =
-              connectedNodeIds &&
+              (connectedNodeIds &&
               connectedNodeIds.has(e.source) &&
-              connectedNodeIds.has(e.target);
+              connectedNodeIds.has(e.target)) ||
+              (evidencePathActive &&
+                ["OWNS", "MADE", "FROM_DEVICE", "FLAGS", "ON_CARD", "INVOLVES"].includes(e.label));
 
-            const isDimmed = connectedNodeIds && !isEdgeActive;
+            const isDimmed =
+              (connectedNodeIds && !isEdgeActive) ||
+              (evidencePathActive && !isEdgeActive);
 
             // Compute midpoint and perpendicular offset for smooth curve
             const midX = (src.x + dst.x) / 2;
@@ -478,7 +545,9 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
             return (
               <g
                 key={e.id || `${e.source}-${e.target}`}
-                className={`transition-opacity duration-300 ${isDimmed ? "opacity-20" : "opacity-90"}`}
+                className={`transition-opacity duration-300 cursor-pointer ${isDimmed ? "opacity-20" : "opacity-95"}`}
+                onMouseEnter={() => setHoveredEdge(e)}
+                onMouseLeave={() => setHoveredEdge(null)}
               >
                 {/* Background Line Glow */}
                 {isEdgeActive && (
@@ -486,8 +555,8 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
                     d={pathD}
                     fill="none"
                     stroke="#38bdf8"
-                    strokeWidth="4"
-                    strokeOpacity="0.4"
+                    strokeWidth="5"
+                    strokeOpacity="0.45"
                     filter="url(#halo-glow)"
                   />
                 )}
@@ -498,7 +567,7 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
                   fill="none"
                   stroke={isEdgeActive ? "#38bdf8" : "#475569"}
                   strokeWidth={isEdgeActive ? 2.5 : 1.75}
-                  strokeDasharray={e.label?.includes("SIMILAR") ? "5 3" : undefined}
+                  strokeDasharray={e.label?.includes("SIMILAR") || e.label?.includes("PRIOR") ? "5 3" : undefined}
                   markerEnd={isEdgeActive ? "url(#edge-arrow-active)" : "url(#edge-arrow)"}
                 />
 
@@ -513,7 +582,7 @@ export function InvestigationGraph({ data, onNodeClick, visibleTypes }: Investig
                       rx="10"
                       fill="#0b0f17"
                       stroke={isEdgeActive ? "#38bdf8" : "#334155"}
-                      strokeWidth="1.2"
+                      strokeWidth={isEdgeActive ? "1.8" : "1.2"}
                     />
                     <text
                       textAnchor="middle"

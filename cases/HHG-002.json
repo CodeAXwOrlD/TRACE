@@ -14,22 +14,10 @@
   "connected_card_ids": [],
   "similar_cases": [
     {
-      "case_id": "CASE-6841",
-      "similarity": 0.75,
+      "case_id": "CC-4160",
+      "similarity": 0.95,
       "outcome": "confirmed_fraud",
-      "reason": "Transaction scale within observed range ($1-$500)"
-    },
-    {
-      "case_id": "CASE-5920",
-      "similarity": 0.75,
-      "outcome": "fraud",
-      "reason": "Transaction scale within observed range ($200-$2000)"
-    },
-    {
-      "case_id": "CASE-8104",
-      "similarity": 0.55,
-      "outcome": "cleared",
-      "reason": "Transaction scale within observed range ($50-$1000)"
+      "reason": "Shared customer and card"
     }
   ],
   "evidence": [
@@ -52,9 +40,9 @@
     "MONITOR"
   ],
   "exposure_usd": 292.36,
-  "rationale": "Case HHG‑002 involves a single CNP transaction (ID 3478782) on card C11891‑K1 for $292.36, a 5.8‑fold increase over the customer’s historical average and a model risk score of 0.79, both flagged as concerns.  The deterministic engine matched policy R3, which governs high‑value card‑not‑present purchases that deviate sharply from typical spend patterns, and assigned a 70 % fraud probability with low uncertainty.  Accordingly, the prescribed actions—requesting step‑up authentication to confirm the cardholder’s identity and placing the account under ongoing monitoring—are warranted to mitigate the identified risk and align with precedent from similar high‑scale fraud cases.",
-  "written_to_graph": true,
-  "graph_case_id": "HHG-002",
+  "rationale": "Investigation confirms fraud classification based on: Ingestion ML risk score flagged moderate anomaly (0.79); Transaction amount ($292.36) exceeds customer historical average ($50.00) by 5.8x. The initial suspicious activity originated at transaction 3478782, yielding cumulative exposure of $292.36. Policy R3 matched, initiating prescribed protocol: REQUEST_STEP_UP_AUTH, MONITOR.",
+  "written_to_graph": false,
+  "graph_case_id": null,
   "approval_route": "AUTOMATED",
   "sar_required": false,
   "sar_narrative": null

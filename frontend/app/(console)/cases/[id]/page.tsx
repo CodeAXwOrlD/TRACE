@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getCaseById, getInvestigation } from "@/lib/api";
 import { Panel } from "@/components/ui/Panel";
@@ -9,7 +9,9 @@ export default async function CaseDetailPage({ params }: { params: { id: string 
   const caseRecord = await getCaseById(params.id);
   if (!caseRecord) notFound();
 
-  const investigation = caseRecord.investigationId ? await getInvestigation(caseRecord.investigationId) : undefined;
+  if (caseRecord.investigationId) {
+    redirect(`/investigations/${caseRecord.investigationId}`);
+  }
 
   return (
     <div className="max-w-3xl">
@@ -34,14 +36,12 @@ export default async function CaseDetailPage({ params }: { params: { id: string 
         <p className="text-[#dfe4e8] leading-relaxed">{caseRecord.summary}</p>
       </Panel>
 
-      {investigation && (
-        <Link
-          href={`/investigations/${investigation.id}`}
-          className="inline-flex items-center bg-orange text-white border border-orange px-5 py-3 rounded-lg font-semibold text-[13px] transition-all hover:-translate-y-0.5"
-        >
-          Open full investigation workspace →
-        </Link>
-      )}
+      <Link
+        href="/investigations"
+        className="inline-flex items-center bg-orange text-white border border-orange px-5 py-3 rounded-lg font-semibold text-[13px] transition-all hover:-translate-y-0.5"
+      >
+        View in Investigation Queue →
+      </Link>
     </div>
   );
 }

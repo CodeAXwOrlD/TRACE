@@ -29,33 +29,81 @@ function useCountUp(target: number, durationMs = 900) {
 }
 
 export function RiskScore({ risk }: { risk: RiskAssessment }) {
-  const pct = useCountUp(risk.probability * 100);
-  const toneColor = risk.verdict === "FRAUD" ? "text-red" : risk.verdict === "LEGITIMATE" ? "text-green" : "text-amber";
+  const hasProb = risk.probability !== null && !isNaN(risk.probability);
+  const targetPct = hasProb ? (risk.probability as number) * 100 : 0;
+  const pct = useCountUp(targetPct);
+  const normVerdict = (risk.verdict || "PENDING").toUpperCase();
+  const toneColor =
+    normVerdict === "FRAUD"
+      ? "text-red"
+      : normVerdict === "LEGITIMATE"
+      ? "text-green"
+      : normVerdict === "UNCERTAIN"
+      ? "text-amber"
+      : "text-muted";
 
   return (
     <div>
-      <div className="flex items-baseline gap-3 mb-1">
-        <span className={`text-6xl font-extrabold tracking-tight ${toneColor}`}>{Math.round(pct)}%</span>
+      <div className="flex items-baseline justify-between mb-2">
+        <div className="flex items-baseline gap-2">
+          {hasProb ? (
+            <span className={`text-4xl font-extrabold tracking-tight font-sans ${toneColor}`}>
+              {Math.round(pct)}%
+            </span>
+          ) : (
+            <span className="text-2xl font-bold tracking-tight text-muted font-sans">
+              Pending
+            </span>
+          )}
+          <span className="font-mono text-[11px] text-muted uppercase">
+            {hasProb ? "Fraud Prob" : "Evaluation"}
+          </span>
+        </div>
         <RiskBadge verdict={risk.verdict} />
       </div>
-      <div className="font-mono text-xs text-muted mb-4">Fraud probability · {risk.uncertainty} uncertainty</div>
-      <div className="space-y-2 text-sm">
-        <ScoreRow label="Risk score (input only)" value={risk.riskScore} color="bg-[#68737e]" />
-        <ScoreRow label="Fraud probability" value={risk.probability} color={risk.verdict === "FRAUD" ? "bg-red" : risk.verdict === "LEGITIMATE" ? "bg-green" : "bg-amber"} />
+
+      <div className="font-mono text-[11px] text-muted mb-4 flex items-center justify-between border-b border-white/[.06] pb-2">
+        <span>Confidence / Uncertainty:</span>
+        <span className="text-[#dfe4e8] font-semibold uppercase">{risk.uncertainty || "HIGH"}</span>
       </div>
-      <p className="text-xs text-[#6b7681] mt-3 leading-relaxed">Score is one input. Probability comes from the evidence.</p>
+
+      <div className="space-y-2.5 text-xs font-mono">
+        <ScoreRow
+          label="Risk score (ML input)"
+          value={risk.riskScore}
+          color="bg-[#68737e]"
+        />
+        <ScoreRow
+          label="Fraud probability (Agent)"
+          value={risk.probability}
+          color={normVerdict === "FRAUD" ? "bg-red" : normVerdict === "LEGITIMATE" ? "bg-green" : "bg-amber"}
+        />
+      </div>
+
+      <p className="text-[11px] text-[#6b7681] mt-3 leading-relaxed">
+        Risk score is detection model input. Fraud probability is calibrated from evidence.
+      </p>
     </div>
   );
 }
 
-function ScoreRow({ label, value, color }: { label: string; value: number; color: string }) {
+function ScoreRow({ label, value, color }: { label: string; value: number | null; color: string }) {
+  const isAvailable = value !== null && !isNaN(value);
+  const displayVal = isAvailable ? value.toFixed(2) : "—";
+  const barWidth = isAvailable ? `${Math.min(Math.max(value * 100, 0), 100)}%` : "0%";
+
   return (
-    <div className="grid grid-cols-[140px_1fr_40px] items-center gap-3">
-      <span className="text-muted text-xs">{label}</span>
-      <div className="h-2 rounded bg-white/[.07] overflow-hidden">
-        <div className={`h-full rounded ${color} transition-[width] duration-700`} style={{ width: `${value * 100}%` }} />
+    <div className="grid grid-cols-[145px_1fr_40px] items-center gap-2.5">
+      <span className="text-muted text-[11px] truncate">{label}</span>
+      <div className="h-1.5 rounded-full bg-white/[.07] overflow-hidden">
+        <div
+          className={`h-full rounded-full ${color} transition-[width] duration-700`}
+          style={{ width: barWidth }}
+        />
       </div>
-      <output className="font-mono text-xs text-right text-[#e4e8ec]">{value.toFixed(2)}</output>
+      <output className="font-mono text-[11px] text-right text-[#e4e8ec]">
+        {displayVal}
+      </output>
     </div>
   );
 }

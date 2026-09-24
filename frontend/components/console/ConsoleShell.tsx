@@ -5,39 +5,32 @@ import Link from "next/link";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
 import { CommandPalette } from "@/components/workbench/CommandPalette";
 import { useCommandPalette } from "@/hooks/useCommandPalette";
-import { getHealth } from "@/lib/api";
+import { useGraphStatus } from "@/hooks/useGraphStatus";
 import { TraceLogo } from "@/components/brand/TraceLogo";
 
 const links = [
   { href: "/investigations", label: "Investigations" },
   { href: "/cases", label: "Cases" },
-  { href: "/investigations", label: "Graph" }, // graph lives inside an investigation workspace
+  { href: "/investigations/inv-hhg-007", label: "Graph" },
   { href: "/settings", label: "System" },
 ];
 
 /**
- * Console-wide chrome for every page under app/(console)/: top nav, system
- * status row, and the Cmd/Ctrl+K command palette (project prompt sections
- * 7 and 18).
+ * Console-wide chrome for every page under app/(console)/: top nav, unified system
+ * graph connectivity status, and the Cmd/Ctrl+K command palette.
  */
 export function ConsoleShell({ children }: { children: React.ReactNode }) {
   const { open, setOpen } = useCommandPalette();
-  const [graphConnected, setGraphConnected] = useState(true);
-
-  useEffect(() => {
-    getHealth()
-      .then((h) => setGraphConnected(h.tigergraph === "connected"))
-      .catch(() => setGraphConnected(false));
-  }, []);
+  const graphStatus = useGraphStatus();
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-40 h-16 px-6 flex items-center justify-between border-b border-white/[.06] bg-[rgba(5,6,8,.75)] backdrop-blur-xl">
+      <header className="sticky top-0 z-40 h-16 px-6 flex items-center justify-between border-b border-white/[.06] bg-[rgba(5,6,8,.85)] backdrop-blur-xl">
         <div className="flex items-center gap-8">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
+          <Link href="/investigations" className="flex items-center gap-2.5">
             <TraceLogo size="sm" />
           </Link>
-          <nav className="hidden md:flex gap-6 text-sm text-muted">
+          <nav className="hidden md:flex gap-6 text-sm font-sans font-medium text-muted">
             {links.map((l) => (
               <Link key={l.label} href={l.href} className="hover:text-white transition-colors">
                 {l.label}
@@ -45,11 +38,11 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-4">
           <StatusIndicator
-            label={graphConnected ? "GRAPH CONNECTED" : "GRAPH OFFLINE"}
-            tone={graphConnected ? "green" : "red"}
-            pulse={false}
+            label={graphStatus.label}
+            tone={graphStatus.tone}
+            pulse={graphStatus.isLive}
           />
           <button
             onClick={() => setOpen(true)}

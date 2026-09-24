@@ -292,10 +292,12 @@ def node_finalize_investigation(state: InvestigationState) -> Dict[str, Any]:
     )
 
     # Write case record back to TigerGraph FraudCaseGraph
+    written_to_graph = False
+    graph_case_id = None
     try:
         from agent.graph_tools import FraudCaseGraphTools
         tools = FraudCaseGraphTools()
-        tools.write_case_to_graph(
+        written_to_graph = tools.write_case_to_graph(
             case_id=state.get("case_id", ""),
             verdict=state.get("verdict", "UNCERTAIN"),
             fraud_probability=state.get("fraud_probability", 0.5),
@@ -305,12 +307,15 @@ def node_finalize_investigation(state: InvestigationState) -> Dict[str, Any]:
             card_id=state.get("card_id"),
             customer_id=state.get("customer", {}).get("id") if isinstance(state.get("customer"), dict) else None,
         )
+        graph_case_id = state.get("case_id") if written_to_graph else None
     except Exception:
-        pass
+        written_to_graph = False
 
     return {
         "status": "COMPLETED",
         "events": events,
+        "written_to_graph": written_to_graph,
+        "graph_case_id": graph_case_id,
     }
 
 

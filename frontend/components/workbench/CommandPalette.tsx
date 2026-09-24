@@ -14,10 +14,6 @@ const defaultCommands: Command[] = [
   { label: "Open dashboard", hint: "overview", run: (r) => r.push("/dashboard") },
   { label: "Open investigations console", hint: "workspace", run: (r) => r.push("/investigations") },
   { label: "Open case queue", hint: "cases", run: (r) => r.push("/cases") },
-  { label: "Inspect case CASE-0007", hint: "fraud example", run: (r) => r.push("/cases/CASE-0007") },
-  { label: "Inspect transaction txn-flagged", hint: "flagged txn", run: (r) => r.push("/transactions/txn-flagged") },
-  { label: "Inspect customer C12382", hint: "profile", run: (r) => r.push("/customers/C12382") },
-  { label: "Inspect device DEV-8819", hint: "shared device", run: (r) => r.push("/devices/DEV-8819") },
   { label: "System settings & infrastructure health", hint: "health", run: (r) => r.push("/settings") },
 ];
 

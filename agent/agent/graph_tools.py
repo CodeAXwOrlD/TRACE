@@ -166,10 +166,10 @@ class FraudCaseGraphTools:
         card_id: Optional[str] = None,
         customer_id: Optional[str] = None,
     ) -> bool:
-        """Upsert CaseRecord vertex and write links into FraudCaseGraph."""
+        """Upsert and read back a CaseRecord. True means persistence was verified."""
         conn = self.client.get_connection()
         if not conn:
-            logger.info(f"TigerGraph cluster offline/paused: Case {case_id} verdict saved locally.")
+            logger.info("TigerGraph unavailable; case %s was not written to graph.", case_id)
             return False
         try:
             # 1. Upsert CaseRecord vertex
@@ -191,8 +191,15 @@ class FraudCaseGraphTools:
                 conn.upsertEdge("CaseRecord", case_id, "flags_transaction", "Transaction", str(transaction_id))
             if first_suspicious_txn_id:
                 conn.upsertEdge("CaseRecord", case_id, "first_fraud_transaction", "Transaction", str(first_suspicious_txn_id))
-            logger.info(f"Successfully wrote case {case_id} to TigerGraph Savanna FraudCaseGraph.")
-            return True
+            # A successful upsert response is not evidence of persistence. Read
+            # the vertex back before reporting written_to_graph=true.
+            readback = conn.getVerticesById("CaseRecord", case_id)
+            verified = bool(readback)
+            if verified:
+                logger.info("Verified TigerGraph writeback for case %s.", case_id)
+            else:
+                logger.warning("TigerGraph writeback for %s had no readable CaseRecord.", case_id)
+            return verified
         except Exception as e:
             logger.warning(f"Failed writing case {case_id} to TigerGraph: {e}")
             return False

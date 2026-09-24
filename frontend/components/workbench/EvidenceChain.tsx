@@ -93,7 +93,9 @@ export function EvidenceChain({ investigation, events = [] }: EvidenceChainProps
     {
       num: "06",
       title: "CALIBRATED PROBABILITY",
-      val: `${Math.round(investigation.risk.probability * 100)}% Fraud Probability`,
+      val: investigation.risk.probability !== null
+        ? `${Math.round(investigation.risk.probability * 100)}% Fraud Probability`
+        : "Pending Investigation",
       desc: "Logistic evidence weighting + prior shift (corrected for 50/50 hackathon distribution).",
       tag:
         investigation.risk.verdict === "FRAUD"

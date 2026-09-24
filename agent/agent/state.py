@@ -57,6 +57,8 @@ class InvestigationState(TypedDict, total=False):
     rationale: str
     status: str  # e.g., "INITIALIZED", "RUNNING", "COMPLETED", "ERROR"
     error_message: Optional[str]
+    written_to_graph: bool
+    graph_case_id: Optional[str]
 
     # Real-time events generated during workflow
     events: List[InvestigationEvent]
@@ -87,6 +89,8 @@ class InvestigationStateModel(BaseModel):
     rationale: str = ""
     status: str = "INITIALIZED"
     error_message: Optional[str] = None
+    written_to_graph: bool = False
+    graph_case_id: Optional[str] = None
     events: List[InvestigationEvent] = Field(default_factory=list)
 
     def to_contract(self) -> InvestigationContract:
@@ -115,8 +119,8 @@ class InvestigationStateModel(BaseModel):
             next_actions=self.next_actions,
             exposure_usd=self.exposure_usd,
             rationale=self.rationale,
-            written_to_graph=True,
-            graph_case_id=self.case_id,
+            written_to_graph=self.written_to_graph,
+            graph_case_id=self.graph_case_id if self.written_to_graph else None,
             approval_route="SENIOR_ANALYST" if self.verdict == "FRAUD" and self.exposure_usd > 2000 else "AUTOMATED",
             sar_required=self.verdict == "FRAUD" and self.exposure_usd >= 2000,
             sar_narrative=f"Suspicious activity report filed for case {self.case_id} involving transaction {self.transaction_id} on card {self.card_id}. Total financial exposure: ${self.exposure_usd:.2f}." if (self.verdict == "FRAUD" and self.exposure_usd >= 2000) else None,

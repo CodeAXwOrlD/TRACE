@@ -14,22 +14,22 @@
   "connected_card_ids": [],
   "similar_cases": [
     {
-      "case_id": "CASE-5920",
-      "similarity": 0.75,
-      "outcome": "fraud",
-      "reason": "Transaction scale within observed range ($200-$2000)"
-    },
-    {
-      "case_id": "CASE-8104",
-      "similarity": 0.55,
-      "outcome": "cleared",
-      "reason": "Transaction scale within observed range ($50-$1000)"
-    },
-    {
-      "case_id": "CASE-6841",
-      "similarity": 0.5,
+      "case_id": "CC-0615",
+      "similarity": 0.95,
       "outcome": "confirmed_fraud",
-      "reason": "Scripted micro-authorization attacks followed by rapid high-velocity cashouts."
+      "reason": "Shared customer and card"
+    },
+    {
+      "case_id": "CC-1313",
+      "similarity": 0.95,
+      "outcome": "cleared",
+      "reason": "Shared customer and card"
+    },
+    {
+      "case_id": "CC-3886",
+      "similarity": 0.95,
+      "outcome": "confirmed_fraud",
+      "reason": "Shared customer and card"
     }
   ],
   "evidence": [
@@ -52,9 +52,9 @@
     "MONITOR"
   ],
   "exposure_usd": 599.94,
-  "rationale": "Case HHG‑015 involves a single card‑not‑present transaction (ID 3464869) of $599.94, a 12‑fold increase over the customer’s historical average, and a model risk score of 0.77—both signals flag a high‑risk anomaly.  Policy R3, which mandates step‑up authentication for CNP transactions exceeding a customer’s typical spend by more than 10×, is therefore triggered, and the prescribed actions of REQUEST_STEP_UP_AUTH and MONITOR are warranted to verify the cardholder’s identity and detect any subsequent suspicious activity.  The deterministic fraud probability of 0.70, low uncertainty, and alignment with 75 %‑similar past fraud cases (CASE‑5920) reinforce the verdict of FRAUD.",
-  "written_to_graph": true,
-  "graph_case_id": "HHG-015",
+  "rationale": "Investigation confirms fraud classification based on: Ingestion ML risk score flagged moderate anomaly (0.77); Transaction amount ($599.94) exceeds customer historical average ($50.00) by 12.0x. The initial suspicious activity originated at transaction 3464869, yielding cumulative exposure of $599.94. Policy R3 matched, initiating prescribed protocol: REQUEST_STEP_UP_AUTH, MONITOR.",
+  "written_to_graph": false,
+  "graph_case_id": null,
   "approval_route": "AUTOMATED",
   "sar_required": false,
   "sar_narrative": null

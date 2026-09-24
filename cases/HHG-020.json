@@ -14,22 +14,16 @@
   "connected_card_ids": [],
   "similar_cases": [
     {
-      "case_id": "CASE-6841",
-      "similarity": 0.75,
+      "case_id": "CC-2277",
+      "similarity": 0.95,
       "outcome": "confirmed_fraud",
-      "reason": "Transaction scale within observed range ($1-$500)"
+      "reason": "Shared customer and card"
     },
     {
-      "case_id": "CASE-8104",
-      "similarity": 0.55,
-      "outcome": "cleared",
-      "reason": "Transaction scale within observed range ($50-$1000)"
-    },
-    {
-      "case_id": "CASE-5920",
-      "similarity": 0.5,
-      "outcome": "fraud",
-      "reason": "Impossible travel speed cross-border transaction burst without prior travel notice."
+      "case_id": "CC-2447",
+      "similarity": 0.95,
+      "outcome": "confirmed_fraud",
+      "reason": "Shared customer and card"
     }
   ],
   "evidence": [
@@ -45,9 +39,9 @@
     "ESCALATE_TO_ANALYST"
   ],
   "exposure_usd": 125.08,
-  "rationale": "Case HHG‑020 involves a single card‑not‑present transaction (ID 3509359) on card C12265‑K2 for $125.08, flagged by the ingestion ML model with a risk score of 0.52 and a moderate anomaly weight of 0.45. The transaction matches policy R9 (CNP fraud) because it lacks a physical card link, shows a moderate anomaly, and falls within the observed fraud scale ($1‑$500), warranting escalation to an analyst given the 37 % fraud probability and high uncertainty. Uncertainty remains due to missing device fingerprinting and velocity data, and the case is only 55 % similar to a cleared transaction (CASE‑8104) while 75 % similar to a confirmed fraud (CASE‑6841), so human review is required to resolve the conflict.",
-  "written_to_graph": true,
-  "graph_case_id": "HHG-020",
+  "rationale": "Investigation yields UNCERTAIN triage due to borderline risk signals and missing identity confirmations. Observed pattern 'cnp' presents conflicting telemetry. Policy R9 mandates escalation: ESCALATE_TO_ANALYST.",
+  "written_to_graph": false,
+  "graph_case_id": null,
   "approval_route": "AUTOMATED",
   "sar_required": false,
   "sar_narrative": null
