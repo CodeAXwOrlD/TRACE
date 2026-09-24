@@ -3,6 +3,11 @@ try:
 except ImportError:
     tg = None
 import os
+from dotenv import load_dotenv
+
+# Ensure backend environment variables are available
+load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 
 
 class TigerGraphClient:

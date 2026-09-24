@@ -32,7 +32,11 @@ async def get_case_by_id(id: str) -> Dict[str, Any]:
     case = get_case(id)
     if not case:
         raise HTTPException(status_code=404, detail="CASE_NOT_FOUND")
-    return case
+    res = dict(case)
+    if id.upper().startswith("CASE-"):
+        res["id"] = id
+        res["caseId"] = id
+    return res
 
 
 @router.get("/cases/{id}/evidence")

@@ -1,5 +1,6 @@
-# Real hackathon dataset
-data/
+# Large raw hackathon dataset files (kept out of git to stay under limits)
+/data/raw/transactions.csv
+/data/raw/identity.csv
 
 # Python
 __pycache__/
