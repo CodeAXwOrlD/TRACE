@@ -34,6 +34,7 @@ export interface InvestigationContract {
   case_id: string;
   transaction_id: string;
   card_id: string;
+  customer_id?: string;
   verdict: VerdictContract;
   fraud_probability: number;
   uncertainty: UncertaintyContract;
@@ -67,7 +68,7 @@ export interface HealthStatusContract {
   status: "ok" | "degraded" | "down";
   frontend: "online" | "offline";
   fastapi: "online" | "offline";
-  tigergraph: "connected" | "disconnected";
+  tigergraph: "connected" | "disconnected" | "mock";
   agent: "ready" | "busy" | "offline";
   llm: "ready" | "rate_limited" | "offline";
   dataset: "loaded" | "pending" | "missing";

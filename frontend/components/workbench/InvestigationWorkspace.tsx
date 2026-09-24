@@ -54,7 +54,7 @@ export function InvestigationWorkspace({
   const [addEvidenceOpen, setAddEvidenceOpen] = useState(false);
   const [rightTab, setRightTab] = useState<"chain" | "cards">("chain");
 
-  const { events, isRunning } = useInvestigationStream(investigation.id);
+  const { events, isRunning } = useInvestigationStream(investigation.triggerTransactionId);
 
   const handleAddEvidence = async (item: EvidenceContractItem) => {
     const res = await apiAddEvidence(investigation.caseId, item);

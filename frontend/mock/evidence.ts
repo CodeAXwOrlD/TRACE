@@ -91,6 +91,10 @@ export const evidenceByInvestigation: Record<string, EvidenceItem[]> = {
   ],
 };
 
-export function getEvidence(investigationId: string): EvidenceItem[] {
-  return evidenceByInvestigation[investigationId] ?? [];
+export function getEvidence(caseOrInvId: string): EvidenceItem[] {
+  if (evidenceByInvestigation[caseOrInvId]) {
+    return evidenceByInvestigation[caseOrInvId];
+  }
+  const normalized = caseOrInvId.toLowerCase().replace("case-", "inv-");
+  return evidenceByInvestigation[normalized] ?? [];
 }

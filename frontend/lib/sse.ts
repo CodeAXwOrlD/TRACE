@@ -32,9 +32,17 @@ export function subscribeToStream(
   if (usingLiveBackend && typeof window !== "undefined" && "EventSource" in window) {
     const url = `${API_BASE}/api/investigate/stream?transaction_id=${encodeURIComponent(investigationOrTxId)}`;
     const es = new EventSource(url);
-    es.onmessage = (msg) => {
+    const handleRaw = (rawData: string) => {
       try {
-        const event = JSON.parse(msg.data) as AgentEvent;
+        const parsed = JSON.parse(rawData);
+        const event: AgentEvent = {
+          id: parsed.id || `evt_${parsed.type || "agent"}`,
+          type: parsed.type || "agent_message",
+          timestamp: parsed.timestamp || new Date().toISOString(),
+          status: parsed.type === "investigation_complete" ? "done" : "active",
+          description: parsed.description || `Processing ${parsed.type || "investigation"}`,
+          data: parsed.data,
+        };
         onEvent(event);
         if (event.type === "investigation_complete") {
           onComplete?.();
@@ -44,6 +52,29 @@ export function subscribeToStream(
         // Malformed event — ignore rather than crash the panel (Rules.md error handling).
       }
     };
+
+    es.onmessage = (msg) => handleRaw(msg.data);
+
+    const eventNames = [
+      "investigation_started",
+      "evidence_found",
+      "graph_analysis_started",
+      "graph_analysis_complete",
+      "pattern_detected",
+      "historical_cases_found",
+      "probability_updated",
+      "uncertainty_updated",
+      "policy_selected",
+      "action_generated",
+      "investigation_complete",
+      "graph_update",
+      "risk_update",
+      "agent_message",
+    ];
+
+    eventNames.forEach((eventName) => {
+      es.addEventListener(eventName, (e: MessageEvent) => handleRaw(e.data));
+    });
     es.onerror = () => {
       es.close();
       // Backend stream dropped; caller can fall back to the mock stream if desired.

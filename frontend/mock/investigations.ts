@@ -13,7 +13,7 @@ export const investigations: Investigation[] = [
     status: "complete",
     pattern: "cnp_new_device",
     risk: { riskScore: 0.87, probability: 0.82, uncertainty: "MEDIUM", verdict: "FRAUD" },
-    policy: { policyId: "R6", actions: ["BLOCK_CARD", "FILE_REPORT", "MONITOR_CONNECTED_CARDS"] },
+    policy: { policyId: "R6", actions: ["BLOCK_CARD", "ESCALATE_CASE", "MONITOR_CONNECTED_CARDS"] },
     evidence: getEvidence("inv-0007"),
     timeline: transactionsForCard("card-4417"),
     rationale:

@@ -91,10 +91,17 @@ class InvestigationStateModel(BaseModel):
 
     def to_contract(self) -> InvestigationContract:
         """Export to exact frontend-compatible InvestigationContract."""
+        cust_id = ""
+        if isinstance(self.customer, dict):
+            cust_id = str(self.customer.get("id") or self.customer.get("customer_id") or "")
+        elif isinstance(self.customer, str):
+            cust_id = self.customer
+
         return InvestigationContract(
             case_id=self.case_id,
             transaction_id=self.transaction_id,
             card_id=self.card_id,
+            customer_id=cust_id,
             verdict=self.verdict,
             fraud_probability=self.fraud_probability,
             uncertainty=self.uncertainty,

@@ -25,7 +25,11 @@ class HistoryAnalyzer:
         4. Episode transactions includes the trigger transaction and all linked suspicious transactions.
         5. Exposure USD is the sum of amounts of all episode transactions.
         """
-        curr_id = current_transaction.get("transaction_id", "txn_trigger")
+        curr_id = (
+            current_transaction.get("transaction_id")
+            or current_transaction.get("id")
+            or "txn_trigger"
+        )
         curr_amount = float(current_transaction.get("amount", 0.0))
 
         # Sort history chronologically
@@ -59,7 +63,7 @@ class HistoryAnalyzer:
                 is_suspicious = True
 
             if is_suspicious:
-                t_id = txn.get("transaction_id")
+                t_id = txn.get("transaction_id") or txn.get("id")
                 if t_id and t_id not in episode_ids:
                     episode_ids.append(t_id)
                     episode_total += amt

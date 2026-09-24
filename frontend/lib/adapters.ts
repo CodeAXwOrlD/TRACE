@@ -90,7 +90,7 @@ export function contractToInvestigationViewModel(
     caseId: contract.case_id,
     triggerTransactionId: contract.transaction_id,
     cardId: contract.card_id,
-    customerId: extra.customerId || `C-${contract.card_id.slice(-4)}`,
+    customerId: contract.customer_id || extra.customerId || `C-${contract.card_id.slice(-4)}`,
     status: "complete",
     pattern: (contract.pattern === "none" ? null : contract.pattern) as FraudPattern | null,
     risk,

@@ -213,9 +213,9 @@ export async function getInvestigation(id: string): Promise<Investigation | unde
   return contractToInvestigationViewModel(contract);
 }
 
-export async function getEvidence(investigationId: string): Promise<EvidenceItem[]> {
-  if (FORCE_MOCKS) return mockGetEvidence(investigationId);
-  return fetchLive<EvidenceItem[]>(`/api/investigations/${investigationId}/evidence`);
+export async function getEvidence(caseIdOrInvId: string): Promise<EvidenceItem[]> {
+  if (FORCE_MOCKS) return mockGetEvidence(caseIdOrInvId);
+  return fetchLive<EvidenceItem[]>(`/api/cases/${caseIdOrInvId}/evidence`);
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {

@@ -38,6 +38,7 @@ class InvestigationContract(BaseModel):
     case_id: str = Field(..., description="Unique case identifier.")
     transaction_id: str = Field(..., description="ID of the trigger transaction.")
     card_id: str = Field(..., description="Card token or identifier.")
+    customer_id: str = Field(default="", description="Customer account identifier.")
     verdict: VerdictContract = Field(..., description="Final triage decision.")
     fraud_probability: float = Field(
         ..., ge=0.0, le=1.0, description="Synthesized fraud probability score."

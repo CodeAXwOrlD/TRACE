@@ -7,8 +7,8 @@ export default async function InvestigationPage({ params }: { params: { id: stri
   if (!investigation) notFound();
 
   const [graph, evidence] = await Promise.all([
-    getInvestigationGraph(investigation.id),
-    getEvidence(investigation.id),
+    getInvestigationGraph(investigation.caseId),
+    getEvidence(investigation.caseId),
   ]);
 
   return <InvestigationWorkspace investigation={investigation} graph={graph} evidence={evidence} />;

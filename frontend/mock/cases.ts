@@ -5,7 +5,7 @@ export const cases: Case[] = investigations.map((inv) => ({
   id: inv.caseId,
   investigationId: inv.id,
   verdict: inv.risk.verdict,
-  exposureUsd: inv.triggerTransactionId === "txn-flagged" ? 128.33 : inv.id === "inv-0019" ? 842 : 64,
+  exposureUsd: inv.exposureUsd ?? 0,
   openedAt: inv.createdAt,
   updatedAt: inv.createdAt,
   summary: inv.rationale,

@@ -11,6 +11,7 @@ from agent.graph import investigation_workflow
 from agent.state import InvestigationState, InvestigationStateModel
 from agent.schemas.investigation import InvestigationContract
 from agent.schemas.events import InvestigationEvent
+from agent.schemas.evidence import EvidenceItem
 
 
 class InvestigationRunner:
@@ -24,7 +25,12 @@ class InvestigationRunner:
 
         Returns: validated InvestigationContract matching frontend contracts.ts.
         """
-        # Ensure default collections
+        raw_evidence = initial_state.get("evidence", [])
+        clean_evidence = [
+            e if isinstance(e, EvidenceItem) else EvidenceItem.model_validate(e)
+            for e in raw_evidence
+        ]
+
         state_dict: InvestigationState = {
             "case_id": initial_state.get("case_id", f"case_{initial_state.get('transaction_id', 'unknown')}"),
             "transaction_id": initial_state.get("transaction_id", ""),
@@ -34,7 +40,7 @@ class InvestigationRunner:
             "transaction_history": initial_state.get("transaction_history", []),
             "connected_cards": initial_state.get("connected_cards", []),
             "connected_devices": initial_state.get("connected_devices", []),
-            "evidence": initial_state.get("evidence", []),
+            "evidence": clean_evidence,
             "events": [],
             "status": "INITIALIZED",
         }
@@ -53,6 +59,12 @@ class InvestigationRunner:
         data: {"type": ..., "data": ..., "timestamp": ...}
 
         """
+        raw_evidence = initial_state.get("evidence", [])
+        clean_evidence = [
+            e if isinstance(e, EvidenceItem) else EvidenceItem.model_validate(e)
+            for e in raw_evidence
+        ]
+
         state_dict: InvestigationState = {
             "case_id": initial_state.get("case_id", f"case_{initial_state.get('transaction_id', 'unknown')}"),
             "transaction_id": initial_state.get("transaction_id", ""),
@@ -62,7 +74,7 @@ class InvestigationRunner:
             "transaction_history": initial_state.get("transaction_history", []),
             "connected_cards": initial_state.get("connected_cards", []),
             "connected_devices": initial_state.get("connected_devices", []),
-            "evidence": initial_state.get("evidence", []),
+            "evidence": clean_evidence,
             "events": [],
             "status": "INITIALIZED",
         }
