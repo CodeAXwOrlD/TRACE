@@ -1,0 +1,54 @@
+{
+  "case_id": "HHG-001",
+  "transaction_id": "3514030",
+  "card_id": "C12382-K1",
+  "customer_id": "C12382",
+  "verdict": "UNCERTAIN",
+  "fraud_probability": 0.39,
+  "uncertainty": "HIGH",
+  "pattern": "cnp",
+  "first_suspicious_txn_id": "3514030",
+  "episode_txn_ids": [
+    "3514030"
+  ],
+  "connected_card_ids": [],
+  "similar_cases": [
+    {
+      "case_id": "CASE-6841",
+      "similarity": 0.75,
+      "outcome": "confirmed_fraud",
+      "reason": "Transaction scale within observed range ($1-$500)"
+    },
+    {
+      "case_id": "CASE-8104",
+      "similarity": 0.55,
+      "outcome": "cleared",
+      "reason": "Transaction scale within observed range ($50-$1000)"
+    },
+    {
+      "case_id": "CASE-5920",
+      "similarity": 0.5,
+      "outcome": "fraud",
+      "reason": "Impossible travel speed cross-border transaction burst without prior travel notice."
+    }
+  ],
+  "evidence": [
+    {
+      "step": "model_signal",
+      "finding": "Ingestion ML risk score flagged moderate anomaly (0.61)",
+      "direction": "concern",
+      "weight": 0.45
+    }
+  ],
+  "policy": "R9",
+  "next_actions": [
+    "ESCALATE_TO_ANALYST"
+  ],
+  "exposure_usd": 77.07,
+  "rationale": "Case HHG‑001 involves a single $77.07 card‑not‑present transaction (ID 3514030) on card C12382‑K1, flagged by the ML model with a 0.61 risk score and a fraud probability of 0.39, matching policy R9 for moderate‑risk CNP activity. Because the evidence (single‑transaction exposure, moderate anomaly score, and lack of corroborating device or velocity data) is insufficient to confirm fraud, the system recommends escalation to a human analyst for deeper review. The high uncertainty and conflicting historical analogues (CASE‑6841 confirmed fraud, CASE‑8104 cleared, CASE‑5920 fraud) underscore the need for additional context before a definitive verdict can be reached.",
+  "written_to_graph": true,
+  "graph_case_id": "HHG-001",
+  "approval_route": "AUTOMATED",
+  "sar_required": false,
+  "sar_narrative": null
+}

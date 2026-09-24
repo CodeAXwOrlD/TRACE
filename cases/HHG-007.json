@@ -1,0 +1,54 @@
+{
+  "case_id": "HHG-007",
+  "transaction_id": "3514948",
+  "card_id": "C09933-K2",
+  "customer_id": "C09933",
+  "verdict": "UNCERTAIN",
+  "fraud_probability": 0.6,
+  "uncertainty": "HIGH",
+  "pattern": "cnp",
+  "first_suspicious_txn_id": "3514948",
+  "episode_txn_ids": [
+    "3514948"
+  ],
+  "connected_card_ids": [],
+  "similar_cases": [
+    {
+      "case_id": "CASE-6841",
+      "similarity": 0.75,
+      "outcome": "confirmed_fraud",
+      "reason": "Transaction scale within observed range ($1-$500)"
+    },
+    {
+      "case_id": "CASE-8104",
+      "similarity": 0.55,
+      "outcome": "cleared",
+      "reason": "Transaction scale within observed range ($50-$1000)"
+    },
+    {
+      "case_id": "CASE-5920",
+      "similarity": 0.5,
+      "outcome": "fraud",
+      "reason": "Impossible travel speed cross-border transaction burst without prior travel notice."
+    }
+  ],
+  "evidence": [
+    {
+      "step": "model_signal",
+      "finding": "Ingestion ML risk score flagged elevated anomaly (0.87)",
+      "direction": "concern",
+      "weight": 0.75
+    }
+  ],
+  "policy": "R9",
+  "next_actions": [
+    "ESCALATE_TO_ANALYST"
+  ],
+  "exposure_usd": 111.92,
+  "rationale": "The first and only transaction in Case HHG‑007 (ID 3514948) on card C09933‑K2 exposed $111.92 and was flagged by the ingestion model with a 0.87 anomaly score, indicating a card‑not‑present (CNP) pattern that aligns with policy R9 for high‑risk CNP activity. Because the fraud probability is 0.60 yet uncertainty is high and no device or velocity data are available to confirm legitimate usage, the model’s recommendation to ESCALATE_TO_ANALYST is warranted to resolve the ambiguous evidence. Similar historical cases (e.g., CASE‑6841) show that transactions in this amount range can be fraudulent, reinforcing the need for manual review before a final determination.",
+  "written_to_graph": true,
+  "graph_case_id": "HHG-007",
+  "approval_route": "AUTOMATED",
+  "sar_required": false,
+  "sar_narrative": null
+}

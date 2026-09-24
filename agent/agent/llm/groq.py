@@ -65,9 +65,9 @@ class GroqProvider(BaseLLMProvider):
         schema_json = json.dumps(response_model.model_json_schema(), indent=2)
         full_prompt = (
             f"{prompt}\n\n"
-            f"You MUST respond ONLY with a valid JSON object matching this schema:\n"
+            f"You MUST respond ONLY with a valid JSON object containing your actual generated values (do not output the schema itself) matching this schema:\n"
             f"```json\n{schema_json}\n```\n"
-            f"Do not include any other text."
+            f"Fill in all required fields with concrete analysis values. Do not include markdown ticks or any explanation outside JSON."
         )
 
         # Attempt 1

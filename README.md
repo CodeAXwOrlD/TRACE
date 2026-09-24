@@ -99,13 +99,18 @@
 │   │   └── workbench/           # Investigation stream & risk components
 │   └── lib/api.ts               # Production live FastAPI client
 │
+├── cases/                       # 20 Hackathon Benchmark Answer Files (Direct Evaluation)
+│   ├── HHG-001.json ... HHG-020.json
+│
+├── scripts/                     # Automation & Evaluation Scripts
+│   └── generate_cases.py        # Generates all 20 benchmark answer files
+│
 ├── data/
 │   └── raw/                     # IEEE-CIS Fraud Benchmark Dataset
-│       ├── transactions.csv     # ~590k raw card transactions
-│       ├── identity.csv         # Device & connection fingerprints
+│       ├── transactions_graph.csv # Graph-linked transaction edges
+│       ├── identity_graph.csv   # Device & connection fingerprints
 │       ├── closed_cases_history.csv # 5,565 historical closed cases
 │       └── case_pack.csv        # 20 benchmark evaluation cases
-
 ```
 
 ---
@@ -237,33 +242,57 @@ npm run dev
 
 ---
 
-## 📊 Benchmarking & Dataset
+## 📊 20 Hackathon Benchmark Evaluation Cases
 
-The project includes the 20 benchmark test cases defined for the hackathon in `data/raw/case_pack.csv`.
+As required by the Hacker House Goa evaluation criteria, all **20 benchmark answer files** are pre-computed, validated, and placed directly at the repository root in the `cases/` directory:
 
-To execute an autonomous investigation run on a specific benchmark transaction or case:
+```
+cases/
+├── HHG-001.json
+├── HHG-002.json
+├── ...
+└── HHG-020.json
+```
+
+Each answer file adheres strictly to the competition evaluation contract:
+- **`case_id`**, **`transaction_id`**, **`card_id`**, **`customer_id`**
+- **`verdict`**: `FRAUD` | `LEGITIMATE` | `UNCERTAIN`
+- **`fraud_probability`** (0.0 to 1.0) & **`uncertainty`** (`LOW` | `MEDIUM` | `HIGH`)
+- **`pattern`**: Fraud typology (`cnp`, `card_testing`, `account_takeover`, etc.)
+- **`first_suspicious_txn_id`** & **`episode_txn_ids`**
+- **`exposure_usd`**: Cumulative exposure amount
+- **`similar_cases`**: Top historical precedent matches retrieved from the 5,565 closed case repository
+- **`evidence`**: Graph traversal & anomaly evidence with signal weights and directions
+- **`policy`**: Rule matched under bank fraud policy (`R1` through `R9`)
+- **`next_actions`**: Prescribed remediation actions (e.g. `REQUEST_STEP_UP_AUTH`, `FREEZE_CARD`, `SAR_FILING`)
+- **`rationale`**: Comprehensive audit-defensible reasoning narrative
+
+### Reproducing / Re-evaluating All 20 Cases
+
+To autonomously execute the entire agent pipeline across all 20 cases:
+
+```bash
+python3 scripts/generate_cases.py
+```
+
+Or run an individual case via Python API:
 
 ```python
+from backend.app.data.dataset_loader import build_initial_state_for_case
 from agent.runner import InvestigationRunner
 
+# Load Case HHG-002 from benchmark dataset
+state = build_initial_state_for_case("HHG-002")
+
+# Execute autonomous LangGraph investigation
 runner = InvestigationRunner()
-result = runner.run({
-    "case_id": "HHG-001",
-    "transaction_id": "3514030",
-    "card_id": "C12382-K1",
-    "customer_id": "C12382",
-    "transaction": {
-        "amount": 250.00,
-        "risk_score": 0.61,
-        "is_new_device": True
-    },
-    "connected_cards": ["C12382-K1"]
-})
+result = runner.run(state)
 
 print(f"Verdict: {result.verdict}")
-print(f"Risk Score: {result.fraud_probability}")
-print(f"Next-Best Action: {result.next_actions}")
+print(f"Pattern: {result.pattern}")
 print(f"Policy: {result.policy}")
+print(f"Next Actions: {result.next_actions}")
+print(f"Audit Rationale: {result.rationale}")
 ```
 
 ---

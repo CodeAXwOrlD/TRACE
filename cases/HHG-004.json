@@ -1,0 +1,48 @@
+{
+  "case_id": "HHG-004",
+  "transaction_id": "3583227",
+  "card_id": "C08106-K1",
+  "customer_id": "C08106",
+  "verdict": "UNCERTAIN",
+  "fraud_probability": 0.04,
+  "uncertainty": "HIGH",
+  "pattern": "none",
+  "first_suspicious_txn_id": "3583227",
+  "episode_txn_ids": [
+    "3583227"
+  ],
+  "connected_card_ids": [],
+  "similar_cases": [
+    {
+      "case_id": "CASE-8104",
+      "similarity": 0.99,
+      "outcome": "cleared",
+      "reason": "Identical fraud typology (none); Transaction scale within observed range ($50-$1000)"
+    },
+    {
+      "case_id": "CASE-6841",
+      "similarity": 0.55,
+      "outcome": "confirmed_fraud",
+      "reason": "Transaction scale within observed range ($1-$500)"
+    }
+  ],
+  "evidence": [
+    {
+      "step": "model_signal",
+      "finding": "Ingestion ML risk score is low (0.00)",
+      "direction": "ease",
+      "weight": 0.5
+    }
+  ],
+  "policy": "R9",
+  "next_actions": [
+    "ESCALATE_TO_ANALYST"
+  ],
+  "exposure_usd": 128.33,
+  "rationale": "Case HHG‑004 involves a single $128.33 purchase on card C08106‑K1 (transaction 3583227), the first flagged activity in the account, yet the ingestion model returned a risk score of 0.00, indicating no obvious pattern.  Policy R9 was applied because it governs low‑value, single‑transaction alerts that lack a clear fraud pattern but still trigger when uncertainty is high; the model’s low score does not negate the need for human review under this rule.  The prescribed action to ESCALATE_TO_ANALYST is warranted because the fraud probability is only 4 % yet the uncertainty is marked HIGH and no corroborating device or velocity evidence is available to confirm or dismiss the suspicion.  The missing evidence—device fingerprint, transaction velocity, and a broader historical pattern—creates a conflict between the low model score and the policy trigger, leaving the verdict uncertain and necessitating analyst adjudication.",
+  "written_to_graph": true,
+  "graph_case_id": "HHG-004",
+  "approval_route": "AUTOMATED",
+  "sar_required": false,
+  "sar_narrative": null
+}

@@ -1,0 +1,48 @@
+{
+  "case_id": "HHG-009",
+  "transaction_id": "3581141",
+  "card_id": "C08299-K1",
+  "customer_id": "C08299",
+  "verdict": "UNCERTAIN",
+  "fraud_probability": 0.04,
+  "uncertainty": "HIGH",
+  "pattern": "none",
+  "first_suspicious_txn_id": "3581141",
+  "episode_txn_ids": [
+    "3581141"
+  ],
+  "connected_card_ids": [],
+  "similar_cases": [
+    {
+      "case_id": "CASE-8104",
+      "similarity": 0.75,
+      "outcome": "cleared",
+      "reason": "Identical fraud typology (none)"
+    },
+    {
+      "case_id": "CASE-6841",
+      "similarity": 0.55,
+      "outcome": "confirmed_fraud",
+      "reason": "Transaction scale within observed range ($1-$500)"
+    }
+  ],
+  "evidence": [
+    {
+      "step": "model_signal",
+      "finding": "Ingestion ML risk score is low (0.00)",
+      "direction": "ease",
+      "weight": 0.5
+    }
+  ],
+  "policy": "R9",
+  "next_actions": [
+    "ESCALATE_TO_ANALYST"
+  ],
+  "exposure_usd": 30.02,
+  "rationale": "The trigger transaction (ID 3581141) on card C08299‑K1 involved a single $30.02 purchase, with no velocity or device‑link evidence indicating repeated activity. Because the transaction falls under policy R9—covering low‑value, single‑occurrence purchases that lack a broader pattern—the system flagged it for review rather than automatic clearance. The ML risk score was 0.00, yet the overall fraud probability remains 0.04 with high uncertainty, largely due to the absence of device‑link or velocity data that could confirm or refute a typical fraud pattern. Consequently, the prescribed action is to ESCALATE_TO_ANALYST so that a human can assess the missing contextual evidence and reconcile the conflicting historical outcomes (one cleared, one confirmed fraud).",
+  "written_to_graph": true,
+  "graph_case_id": "HHG-009",
+  "approval_route": "AUTOMATED",
+  "sar_required": false,
+  "sar_narrative": null
+}
