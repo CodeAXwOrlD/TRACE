@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+polars
+pyTigerGraph
+python-dotenv
+sse-starlette
