@@ -143,18 +143,19 @@ cp backend/.env.example backend/.env
 Edit `backend/.env` with your settings:
 ```env
 # TigerGraph Savanna Cloud Credentials
-TIGERGRAPH_HOST=https://your-subdomain.i.tgcloud.io
-TIGERGRAPH_TOKEN=your-savanna-api-token
-TIGERGRAPH_GRAPH=AntiFraudGraph
-TIGERGRAPH_USERNAME=tigergraph
-TIGERGRAPH_PASSWORD=your-cluster-password
+# Note: Ensure the host includes the `.i.tgcloud.io` domain
+TG_HOST=https://your-instance.i.tgcloud.io
+TG_GRAPHNAME=FraudCaseGraph
+TG_SECRET=your_tigergraph_secret_here
+TG_TOKEN=
 
 # AI Reasoning Providers (Optional / Fallback)
-BACKEND_MOCK_MODE=true        # Set 'false' when connecting to live TigerGraph
+BACKEND_MOCK_MODE=false       # Set 'false' for live TigerGraph cloud connectivity
 AI_MOCK_MODE=false
-AI_PROVIDER=gemini            # Options: 'mock', 'gemini', 'groq'
-GEMINI_API_KEY=your_gemini_api_key
-GROQ_API_KEY=your_groq_api_key
+AI_PROVIDER=groq              # Options: 'groq', 'gemini', 'mock'
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=openai/gpt-oss-20b
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 #### Frontend Environment:
@@ -207,16 +208,15 @@ cd ..
 ## 🐯 TigerGraph Savanna Configuration
 
 ### Option A: Managed Cloud (Recommended)
-1. Go to [savanna.tgcloud.io](https://savanna.tgcloud.io/) and create a free account.
-2. Create a free tier cluster and enable **Auto-start/Auto-stop**.
-3. Create a graph named `AntiFraudGraph`.
+1. Go to [savanna.tgcloud.io](https://savanna.tgcloud.io/) and create or log in to your account.
+2. Ensure your cluster is active and copy the URL (format: `https://<cluster-id>.i.tgcloud.io`).
+3. Set Graph Name to `FraudCaseGraph` (or your chosen graph name).
 4. Generate a secret/token from Admin Portal or GraphStudio.
-5. Provide the URL, Graph Name, and Secret in `backend/.env`.
+5. Set `TG_HOST`, `TG_GRAPHNAME`, and `TG_SECRET` in `backend/.env`.
+6. Verify connection via the health endpoint: `GET http://localhost:8000/api/health` returns `tigergraph: "connected"` and `graph_connection_state: "CONNECTED"`.
 
 ### Optional MCP Server
-An MCP server may be run alongside TRACE for future tool integration, but the
-current runtime uses direct authenticated TigerGraph API calls and does not
-invoke MCP tools:
+An MCP server bridge is provided in `agent/agent/tigergraph_mcp.py` for standard protocol tools:
 ```bash
 tigergraph-mcp --transport stdio
 # OR Streamable HTTP for multi-user:
@@ -268,6 +268,8 @@ Each answer file adheres strictly to the competition evaluation contract:
 - **`policy`**: Rule matched under bank fraud policy (`R1` through `R9`)
 - **`next_actions`**: Prescribed remediation actions (e.g. `REQUEST_STEP_UP_AUTH`, `FREEZE_CARD`, `SAR_FILING`)
 - **`rationale`**: Comprehensive audit-defensible reasoning narrative
+
+> **Note on Dataset Packaging:** To keep the submission package lightweight (~19MB) for judging, the uncompressed 676MB raw Kaggle transaction dump (`transactions.csv`) is omitted. All graph-indexed files (`case_pack.csv`, `identity_graph.csv`, `transactions_graph.csv`, and `closed_cases_history.csv`) are bundled, enabling full offline dataset loading, historical memory retrieval across 5,565 closed cases, and complete autonomous re-evaluation.
 
 ### Reproducing / Re-evaluating All 20 Cases
 
