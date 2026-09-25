@@ -177,6 +177,7 @@ export interface Investigation {
   id: string;
   caseId: string;
   triggerTransactionId: string;
+  triggerType?: string;
   cardId?: string;
   customerId: string;
   status: string;

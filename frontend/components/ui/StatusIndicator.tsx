@@ -8,9 +8,9 @@ export function StatusIndicator({ label, tone = "green", pulse = true }: { label
     cyan: "bg-blue shadow-[0_0_9px_rgba(62,155,208,.7)]",
   };
   return (
-    <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider text-muted">
+    <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider text-muted" suppressHydrationWarning>
       <span className={cn("w-1.5 h-1.5 rounded-full", dot[tone], pulse && "animate-pulse")} aria-hidden="true" />
-      {label}
+      <span suppressHydrationWarning>{label}</span>
     </div>
   );
 }

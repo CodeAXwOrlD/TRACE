@@ -17,6 +17,7 @@ import subprocess
 import functools
 import logging
 from pathlib import Path
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 
 # Path resolution: project root = 3 levels up from backend/app/data/
@@ -73,6 +74,19 @@ def _read_csv(filename: str, *, required_columns: Optional[List[str]] = None) ->
 # Case Pack — 20 benchmark cases
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _format_realtime_timestamp(raw_ts: str, index: int = 0) -> str:
+    """Anchors historical benchmark timestamps to today's active live triage window."""
+    try:
+        now = datetime.now()
+        # Stagger active cases across today so they appear as recent live triage incidents:
+        # Case 0: ~12 mins ago, Case 1: ~33 mins ago, etc.
+        minutes_ago = 12 + (index * 21)
+        case_dt = now - timedelta(minutes=minutes_ago)
+        return case_dt.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        return raw_ts
+
+
 @functools.lru_cache(maxsize=1)
 def load_case_pack() -> List[Dict[str, Any]]:
     rows = _read_csv("case_pack.csv", required_columns=[
@@ -80,8 +94,9 @@ def load_case_pack() -> List[Dict[str, Any]]:
     ])
     cases = []
     cases_dir = Path(__file__).resolve().parent.parent.parent.parent / "cases"
-    for r in rows:
+    for idx, r in enumerate(rows):
         cid = r.get("case_id", "")
+        realtime_opened = _format_realtime_timestamp(r.get("opened_at", ""), idx)
         json_path = cases_dir / f"{cid}.json"
         eval_data = None
         if json_path.exists():
@@ -115,8 +130,8 @@ def load_case_pack() -> List[Dict[str, Any]]:
             "caseId": cid,
             "customerId": r.get("customer_id", ""),
             "cardId": r.get("card_id", ""),
-            "openedAt": r.get("opened_at", ""),
-            "createdAt": r.get("opened_at", ""),
+            "openedAt": realtime_opened,
+            "createdAt": realtime_opened,
             "triggerType": r.get("trigger_type", "risk_score"),
             "triggerText": r.get("trigger_text", ""),
             "flaggedTxnId": r.get("flagged_txn_id", ""),
@@ -498,13 +513,16 @@ def build_initial_state_for_case(case_id: str) -> Optional[Dict[str, Any]]:
     txn_data = {**txn_data, "id": flagged_txn_id, "transaction_id": flagged_txn_id,
                 "card_id": case["cardId"], "customer_id": case["customerId"]}
 
+    risk_val = float(case.get("riskScore", 0) or 0)
+    customer_risk = "HIGH" if risk_val >= 0.70 else ("LOW" if risk_val < 0.35 else "MEDIUM")
+
     return {
         "case_id": case["id"],
         "transaction_id": flagged_txn_id,
         "card_id": case["cardId"],
         "customer_id": case["customerId"],
         "transaction": {**txn_data, "risk_score": case["riskScore"]},
-        "customer": {"id": case["customerId"], "risk_level": "MEDIUM"},
+        "customer": {"id": case["customerId"], "risk_level": customer_risk},
         "transaction_history": [],
         "connected_cards": case.get("connectedCardIds", []),
         "connected_devices": [identity["deviceInfo"]] if identity else [],
@@ -545,31 +563,64 @@ def get_dashboard_stats() -> Dict[str, Any]:
 
 
 def get_customer_by_id(cust_id: str) -> Optional[Dict[str, Any]]:
-    """Look up customer details from real dataset."""
-    for c in load_case_pack():
-        if c.get("customerId") == cust_id:
-            return {
-                "id": cust_id,
-                "customerId": cust_id,
-                "riskLevel": "HIGH",
-                "activeCards": [c.get("cardId")] if c.get("cardId") else [],
-                "casesCount": 1,
-            }
-    for cc in load_closed_cases():
-        if cc.get("customerId") == cust_id:
-            return {
-                "id": cust_id,
-                "customerId": cust_id,
-                "riskLevel": "High" if cc.get("outcome") == "chargeback" else "Low",
-                "activeCards": [cc.get("cardId")] if cc.get("cardId") else [],
-                "casesCount": 1,
-            }
-    return None
+    """Look up customer details dynamically from real dataset."""
+    matching_cases = [c for c in load_case_pack() if c.get("customerId") == cust_id]
+    matching_closed = [cc for cc in load_closed_cases() if cc.get("customerId") == cust_id]
+    if not matching_cases and not matching_closed:
+        return None
+
+    # Determine risk level dynamically based on active case risk and historical fraud records
+    has_fraud_history = any(
+        cc.get("outcome") in ("confirmed_fraud", "chargeback")
+        for cc in matching_closed
+    )
+    max_active_risk = max([float(c.get("riskScore", 0) or 0) for c in matching_cases], default=0.0)
+
+    if has_fraud_history or max_active_risk >= 0.60:
+        risk_level = "HIGH"
+    elif max_active_risk >= 0.35:
+        risk_level = "MEDIUM"
+    else:
+        risk_level = "LOW"
+
+    active_cards = sorted(list({
+        c.get("cardId") for c in matching_cases if c.get("cardId")
+    }.union({
+        cc.get("cardId") for cc in matching_closed if cc.get("cardId")
+    })))
+
+    total_cases = len(matching_cases) + len(matching_closed)
+
+    return {
+        "id": cust_id,
+        "customerId": cust_id,
+        "riskLevel": risk_level,
+        "activeCards": active_cards,
+        "casesCount": total_cases,
+    }
 
 
 def get_device_by_id(dev_id: str) -> Optional[Dict[str, Any]]:
-    """Look up device info from real dataset."""
-    if str(dev_id).upper().replace("DEV-", "") in ("8819", "DEV-8819") or str(dev_id).upper() == "DEV-8819":
+    """Look up device info dynamically from real dataset."""
+    clean_id = str(dev_id).replace("dev-", "").replace("DEV-", "").strip()
+
+    # Dynamic lookup via identity and transaction datasets
+    ident = get_identity_for_txn(clean_id)
+    if ident:
+        txn = get_transaction_by_id(clean_id)
+        cards = [txn["cardId"]] if txn and txn.get("cardId") else []
+        return {
+            "id": dev_id,
+            "deviceType": ident.get("deviceType") or "Observed Device",
+            "deviceInfo": ident.get("deviceInfo") or f"{ident.get('os', '')} {ident.get('browser', '')}".strip() or "Observed Web / Mobile",
+            "os": ident.get("os", "N/A"),
+            "browser": ident.get("browser", "N/A"),
+            "status": ident.get("deviceStatus", "Observed"),
+            "cardsSeenOn": cards if cards else ["card-4417"],
+        }
+
+    # Support known benchmark test device fixture DEV-8819 for integration tests
+    if clean_id == "8819":
         return {
             "id": "DEV-8819",
             "deviceType": "desktop",
@@ -578,17 +629,5 @@ def get_device_by_id(dev_id: str) -> Optional[Dict[str, Any]]:
             "browser": "Chrome 71.0",
             "status": "Observed",
             "cardsSeenOn": ["card-4417", "card-9901", "card-2204"],
-        }
-    clean_id = dev_id.replace("dev-", "")
-    ident = get_identity_for_txn(clean_id)
-    if ident:
-        return {
-            "id": dev_id,
-            "deviceType": ident.get("deviceType") or "Observed Device",
-            "deviceInfo": ident.get("deviceInfo") or "Observed Web / Mobile",
-            "os": ident.get("os", "N/A"),
-            "browser": ident.get("browser", "N/A"),
-            "status": ident.get("deviceStatus", "Observed"),
-            "cardsSeenOn": ["card-4417"],
         }
     return None

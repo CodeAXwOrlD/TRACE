@@ -105,7 +105,7 @@ export function InvestigationWorkspace({
       {/* ==================================================================== */}
       {/* SECTION 3: GRAPH INVESTIGATION & SUBGRAPH TOPOLOGY                   */}
       {/* ==================================================================== */}
-      <section className="rounded-xl border border-white/[.08] bg-[#0c1017]/90 p-5 shadow-xl backdrop-blur-sm">
+      <section className="rounded-xl border border-white/[.08] bg-[#0c1017] p-5 shadow-xl">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-white/[.06]">
           <div>
             <div className="flex items-center gap-2">

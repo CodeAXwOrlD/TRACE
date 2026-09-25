@@ -23,7 +23,7 @@ class TigerGraphMCPToolClient:
         username: Optional[str] = None,
         password: Optional[str] = None,
     ):
-        self.host = host or os.environ.get("TG_HOST") or os.environ.get("TIGERGRAPH_HOST", "http://localhost:9000")
+        self.host = host or os.environ.get("TG_HOST") or os.environ.get("TIGERGRAPH_HOST") or ""
         self.graphname = graphname or os.environ.get("TG_GRAPHNAME") or os.environ.get("TIGERGRAPH_GRAPH", "FraudCaseGraph")
         self.token = token or os.environ.get("TG_TOKEN") or os.environ.get("TIGERGRAPH_TOKEN") or os.environ.get("TG_SECRET", "")
         self.username = username or os.environ.get("TIGERGRAPH_USERNAME", "tigergraph")

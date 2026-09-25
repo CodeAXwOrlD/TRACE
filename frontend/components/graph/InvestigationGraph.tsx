@@ -138,23 +138,66 @@ export function InvestigationGraph({
   // Fullscreen expand/collapse state
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Close fullscreen on Escape key & lock document scrolling
+  const toggleFullscreen = useCallback(() => {
+    if (!containerRef.current) return;
+    const isCurrentlyFs = Boolean(document.fullscreenElement) || isFullscreen;
+
+    if (!isCurrentlyFs) {
+      if (containerRef.current.requestFullscreen) {
+        containerRef.current.requestFullscreen().catch(() => {
+          setIsFullscreen(true);
+        });
+      } else {
+        setIsFullscreen(true);
+      }
+    } else {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+      setIsFullscreen(false);
+      document.body.style.overflow = "";
+    }
+  }, [isFullscreen]);
+
+  // Sync fullscreen state with native browser events & ensure scrolling is restored
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isFullscreen) setIsFullscreen(false);
+    const onFsChange = () => {
+      const isFs = Boolean(document.fullscreenElement);
+      setIsFullscreen(isFs);
+      if (!isFs) {
+        document.body.style.overflow = "";
+      }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && (isFullscreen || document.fullscreenElement)) {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+        setIsFullscreen(false);
+        document.body.style.overflow = "";
+      }
+    };
+
+    document.addEventListener("fullscreenchange", onFsChange);
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", onFsChange);
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = "";
+    };
   }, [isFullscreen]);
 
   useEffect(() => {
-    if (isFullscreen) {
-      const prev = document.body.style.overflow;
+    if (isFullscreen && !document.fullscreenElement) {
       document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = prev;
-      };
+    } else {
+      document.body.style.overflow = "";
     }
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [isFullscreen]);
 
   // Compute organic coordinates using Graphology ForceAtlas2 on mount/data change
@@ -442,7 +485,7 @@ export function InvestigationGraph({
           <ZoomOut size={15} />
         </button>
         <button
-          onClick={() => setIsFullscreen((v) => !v)}
+          onClick={toggleFullscreen}
           title={isFullscreen ? "Exit Fullscreen (Esc)" : "Fullscreen Graph"}
           className="p-1.5 rounded-lg hover:bg-white/[.08] text-[#8894a0] hover:text-orange transition-colors"
         >

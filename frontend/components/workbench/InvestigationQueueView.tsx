@@ -93,8 +93,7 @@ export function InvestigationQueueView({ initialInvestigations }: InvestigationQ
 
       // Trigger filter
       if (triggerFilter !== "all") {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const t = ((item as any).triggerType || "risk_score").toLowerCase();
+        const t = (item.triggerType || "risk_score").toLowerCase();
         if (!t.includes(triggerFilter.toLowerCase())) return false;
       }
 
@@ -130,8 +129,7 @@ export function InvestigationQueueView({ initialInvestigations }: InvestigationQ
   };
 
   const formatTrigger = (item: Investigation) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const triggerType = (item as any).triggerType;
+    const triggerType = item.triggerType;
     if (triggerType === "customer_report") return "Customer Report";
     if (triggerType === "analyst_request") return "Analyst Request";
     return "Detection Model";
@@ -456,7 +454,7 @@ export function InvestigationQueueView({ initialInvestigations }: InvestigationQ
                       </td>
 
                       {/* Opened Timestamp */}
-                      <td className="py-3 px-3 text-muted text-[11px] whitespace-nowrap">
+                      <td className="py-3 px-3 text-muted text-[11px] whitespace-nowrap" suppressHydrationWarning>
                         {formatTimestamp(r.createdAt)}
                       </td>
 

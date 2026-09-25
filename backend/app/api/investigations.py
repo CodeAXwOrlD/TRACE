@@ -157,7 +157,7 @@ def _case_to_investigation_contract(case: Dict[str, Any]) -> Dict[str, Any]:
         sar_required = False
         sar_narrative = None
         written_to_graph = False
-        graph_case_id = cid
+        graph_case_id = None
         status = "open"
 
     policy_meta = POLICY_REGISTRY.get(policy, POLICY_REGISTRY["R9"])

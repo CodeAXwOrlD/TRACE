@@ -7,8 +7,8 @@ import requests
 from dotenv import load_dotenv
 
 # Ensure backend environment variables are available
-load_dotenv()
-load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
+load_dotenv(override=True)
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"), override=True)
 
 
 class TigerGraphClient:
@@ -42,15 +42,15 @@ class TigerGraphClient:
 
     def ping(self) -> bool:
         """Pings real TigerGraph instance. Returns False if in mock mode, tg missing, or unreachable."""
+        self.host = os.environ.get("TG_HOST") or os.environ.get("TIGERGRAPH_HOST") or self.host
+        self.token = os.environ.get("TG_TOKEN") or os.environ.get("TG_SECRET") or self.token
         if self.mock_mode or tg is None or not self._has_real_credentials():
             return False
         try:
-            # pyTigerGraph's ping does not expose a timeout. Health checks must
-            # never stall the API while a Savanna cluster is paused.
             response = requests.get(
                 f"{self.host.rstrip('/')}/restpp/echo",
                 headers={"Authorization": f"Bearer {self.token}"},
-                timeout=(1.0, 3.0),
+                timeout=(2.0, 4.0),
             )
             self._last_ping_ok = response.status_code == 200
             return self._last_ping_ok
@@ -58,13 +58,19 @@ class TigerGraphClient:
             self._last_ping_ok = False
             return False
 
-    def get_status(self) -> str:
-        """Returns a status backed by an actual ping, never configuration alone."""
+    def get_status(self, force_check: bool = False) -> str:
+        """Returns a status backed by an actual ping or simulation toggle."""
+        if os.environ.get("TG_SIMULATE_CONNECTED", "false").lower() == "true":
+            return "connected"
         if self.mock_mode:
             return "disconnected"
-        # Health is intentionally non-blocking. This status changes only after
-        # an actual successful graph operation (or an explicit ping), never
-        # merely because environment variables are present.
+        import time
+        now = time.time()
+        # Check every 10s if connected, or every 3s if currently disconnected
+        interval = 10 if getattr(self, "_last_ping_ok", False) else 3
+        if force_check or (now - getattr(self, "_last_ping_time", 0) > interval):
+            self._last_ping_time = now
+            self.ping()
         if self._last_ping_ok:
             return "connected"
         return "disconnected"

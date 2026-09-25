@@ -127,7 +127,7 @@ export function InvestigationHeader({ investigation, onAddEvidenceClick }: Inves
             </span>
             <span className="text-dim">|</span>
             <span>
-              Opened: <strong className="text-dim">{formatTimestamp(investigation.createdAt)}</strong>
+              Opened: <strong className="text-dim" suppressHydrationWarning>{formatTimestamp(investigation.createdAt)}</strong>
             </span>
           </div>
         </div>

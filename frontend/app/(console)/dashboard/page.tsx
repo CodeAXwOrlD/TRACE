@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getDashboardStats, getCases, getInvestigations } from "@/lib/api";
+import { getDashboardStats, getCases, getInvestigations, getHealth } from "@/lib/api";
 import { Metric } from "@/components/ui/Metric";
 import { Panel } from "@/components/ui/Panel";
 import { RiskBadge } from "@/components/ui/RiskBadge";
@@ -8,7 +8,12 @@ import { SystemStatusRow } from "@/components/console/SystemStatusRow";
 import { formatTimestamp, formatUsd } from "@/lib/utils";
 
 export default async function DashboardPage() {
-  const [stats, cases, investigations] = await Promise.all([getDashboardStats(), getCases(), getInvestigations()]);
+  const [stats, cases, investigations, health] = await Promise.all([
+    getDashboardStats(),
+    getCases(),
+    getInvestigations(),
+    getHealth().catch(() => null),
+  ]);
 
   return (
     <div>
@@ -85,9 +90,30 @@ export default async function DashboardPage() {
 
         <Panel title="AGENT ACTIVITY">
           <div className="flex items-center gap-2 mb-2">
-            <StatusIndicator label="AGENT READY" tone="green" />
+            <StatusIndicator
+              label={
+                health?.agent === "ready"
+                  ? "AGENT READY"
+                  : health?.agent === "busy"
+                  ? "AGENT BUSY"
+                  : "AGENT OFFLINE"
+              }
+              tone={
+                health?.agent === "ready"
+                  ? "green"
+                  : health?.agent === "busy"
+                  ? "amber"
+                  : "red"
+              }
+            />
           </div>
-          <div className="text-sm text-muted">No investigation currently running. Start one from the Investigations tab.</div>
+          <div className="text-sm text-muted">
+            {health?.agent === "ready"
+              ? "No investigation currently running. Start one from the Investigations tab."
+              : health?.agent === "busy"
+              ? "Investigation in progress."
+              : "Agent service is currently offline or unreachable."}
+          </div>
         </Panel>
       </div>
     </div>
